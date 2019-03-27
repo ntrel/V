@@ -82,7 +82,7 @@ color: #777;
 
 
 <div class='docs'>
-<h2 style='border:0'>Introduction</h2> 
+<h2 id=introduction style='border:0'>Introduction</h2> 
 V is a statically typed compiled programming language designed for building maintainable software. 
 
 <p> 
@@ -290,7 +290,7 @@ fn main() {
 	<comment>// We can also preallocate a certain amount of elements.</comment> 
 	nr_ids := 50
 	mut ids := [ 0 ; nr_ids ] <comment>// This creates an array with 50 zeroes</comment> 
-	for i := 0; i < nr_ids; i++ {
+	for mut i := 0; i < nr_ids; i++ {
 		ids[i] = i <comment>// This is more efficient than </comment> 
 		           <comment>// ids << i</comment> 
 	}
@@ -399,7 +399,7 @@ The condition can be omitted, this results in an infinite loop.
 <p>&nbsp;</p>
 <pre>
 fn main() {
-	for i := 0; i < 10; i++ {
+	for mut i := 0; i < 10; i++ {
 		println(i)
 	}
 }
@@ -530,7 +530,7 @@ you have to add a <code>?</code> to the return type and return an error when som
  
 
 <h2 id=generics>Generics</h2> 
-<pre>struct Repo &lt;T> {
+<pre>struct Repo&lt;T> {
 	db DB
 }
 
