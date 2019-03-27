@@ -281,6 +281,7 @@ fn main() {
 	println(nums[1]) <comment>// ==> "2"</comment> 
 
 	mut names := [ 'John' ]
+	<comment>// append</comment>
 	names << 'Peter'
 	names << 'Sam'
 	<comment>// names << 10  <-- This will not compile. `names` is an array of strings.</comment> 
@@ -288,12 +289,11 @@ fn main() {
 	println(names.contains('Alex')) <comment>// ==> "false"</comment> 
 
 	<comment>// We can also preallocate a certain amount of elements.</comment> 
-	nr_ids := 50
-	mut ids := [ 0 ; nr_ids ] <comment>// This creates an array with 50 zeroes</comment> 
-	for mut i := 0; i < nr_ids; i++ {
-		ids[i] = i <comment>// This is more efficient than </comment> 
-		           <comment>// ids << i</comment> 
+	mut ids := [ 0 ; 50 ] <comment>// This creates an array with 50 zeroes</comment> 
+	for i, mut e in ids {
+		e = i <comment>// This is more efficient than appending repeatedly</comment> 
 	}
+	assert ids[42] == 42
 }
 </pre>
 
