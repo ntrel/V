@@ -288,9 +288,8 @@ fn main() {
 	println(names.contains('Alex')) <comment>// ==> "false"</comment> 
 
 	<comment>// We can also preallocate a certain amount of elements.</comment> 
-	nr_ids := 50
-	mut ids := [ 0 ; nr_ids ] <comment>// This creates an array with 50 zeroes</comment> 
-	for mut i := 0; i < nr_ids; i++ {
+	mut ids := [ 0 ; 50 ] <comment>// This creates an array with 50 zeroes</comment> 
+	for i := 0; i < ids.len; i++ {
 		ids[i] = i <comment>// This is more efficient than </comment> 
 		           <comment>// ids << i</comment> 
 	}
@@ -399,7 +398,7 @@ The condition can be omitted, this results in an infinite loop.
 <p>&nbsp;</p>
 <pre>
 fn main() {
-	for mut i := 0; i < 10; i++ {
+	for i := 0; i < 10; i++ {
 		println(i)
 	}
 }
