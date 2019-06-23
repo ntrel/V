@@ -62,7 +62,11 @@ int g_test_ok = 1;
 /*================================== FNS =================================*/
 #include <dirent.h>
 #include <errno.h>
-#include <execinfo.h>
+#ifdef windows
+# include <windows.h>
+#else
+# include <execinfo.h>
+#endif
 #include <signal.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -4016,6 +4020,11 @@ string os__basedir(string path) {
   return string_left(path, pos + 1);
 }
 string os__filename(string path) { return string_all_after(path, tos2("/")); }
+#ifdef windows
+int getline() {abort();}
+void *backtrace() {abort();}
+void backtrace_symbols_fd() {abort();}
+#endif
 string os__get_line() {
 
   int max = 256;
@@ -13474,6 +13483,8 @@ ScanRes Scanner_scan(Scanner *s) {
     return scan_res(DIV, tos2(""));
   };
 
+  if (c == 0)
+    return scan_res(EOF, tos2(""));
   println2(_STR("(char code=%d) pos=%d len=%d", c, s->pos, s->text.len));
 
   Scanner_error(&/* ? */ *s, _STR("invalid character `%.*s`", byte_str(c).len,
