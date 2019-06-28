@@ -131,8 +131,11 @@ pub fn trunc(a f64) f64 {
 }
 
 pub fn factorial(a int) i64 {
-	mut prod := 1	
-	for i:= 0; i < a; i++ {
+	if a < 0 || a > 20 {
+		panic('Can\'t calculate factorial($a)')
+	}
+	mut prod := 1
+	for i := 1; i < a; i++ {
 		prod = prod * (i+1)
 	}
 	return prod
