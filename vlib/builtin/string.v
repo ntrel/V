@@ -347,11 +347,28 @@ pub fn (s string) substr(start, end int) string {
 	return res
 }
 
-// KMP search
 pub fn (s string) index(p string) int {
-	if p.len > s.len {
+	if s.len == 0 || p.len == 0 || p.len > s.len {
 		return -1
 	}
+	if p.len * 100 > s.len {
+		mut rem := s
+		search:
+		for {
+			ptr := byteptr(C.memchr(rem.str, p[0], rem.len))
+			if isnil(ptr) {return -1}
+			rem = tos(ptr, ptr - rem.str)
+			for i := 1; i < rem.len; i++ {
+				if rem[i] != p[i] {
+					rem = rem.substr(1, rem.len - 1)
+					goto search
+				}
+			}
+			return ptr - s.str
+		}
+	}
+	// KMP search
+	// TODO PERF allocate capacity of p.len
 	mut prefix := [0]
 	mut j := 0
 	for i := 1; i < p.len; i++ {
