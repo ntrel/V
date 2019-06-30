@@ -353,18 +353,18 @@ pub fn (s string) index(p string) int {
 	}
 	if p.len * 100 > s.len {
 		mut rem := s
-		search:
 		for {
-			ptr := byteptr(C.memchr(rem.str, p[0], rem.len))
+			mut ptr := rem.str
+			ptr = byteptr(C.memchr(ptr, p[0], rem.len))
+			println(rem)
 			if isnil(ptr) {return -1}
-			rem = tos(ptr, ptr - rem.str)
-			for i := 1; i < rem.len; i++ {
-				if rem[i] != p[i] {
-					rem = rem.substr(1, rem.len - 1)
-					goto search
-				}
-			}
-			return ptr - s.str
+			if C.memcmp(ptr, p.str, p.len) == 0 {
+				len := int(ptr - s.str)
+			    return len
+		    }
+			len := int(ptr - rem.str)
+			//println(rem)
+			rem = rem.substr(len + 1, rem.len - 1 - len)
 		}
 	}
 	// KMP search
