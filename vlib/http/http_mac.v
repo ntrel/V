@@ -77,7 +77,7 @@ fn write_fn(contents byteptr, size, nmemb int, _mem *MemoryStruct) int {
 
 struct C.curl_slist { }
 
-fn (req &Request) do() Response {
+fn (req &Request) do() ?Response {
 	//println('req.do() mac/linux url="$req.url" data="$req.data"')
 	// println('req.do() url="$req.url"')
 	/* 
@@ -99,8 +99,7 @@ fn (req &Request) do() Response {
 	// init curl
 	curl := C.curl_easy_init()
 	if isnil(curl) {
-		println('curl init failed')
-		return Response{}
+		return error('curl init failed')
 	}
 	// options
 	// url2 := req.url.clone()
@@ -150,7 +149,7 @@ fn (req &Request) do() Response {
 	// chunk.strings.free()
 	// resp.headers = hchunk.strings
 	if hchunk.strings.len == 0 {
-		return Response{}
+		return error('no header data')
 	}
 	first_header := hchunk.strings.first()
 	mut status_code := 0

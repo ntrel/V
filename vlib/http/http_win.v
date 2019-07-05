@@ -18,9 +18,8 @@ import const (
 	INTERNET_SERVICE_HTTP
 )
 
-fn (req &Request) do() Response {
+fn (req &Request) do() ?Response {
 	mut s := ''
-	emptyresp := Response{}
 	mut url := req.url
 	println('\n\nhttp.do() WIN URL="$url" TYP=$req.typ data="$req.data" headers.len=req.headers.len"')
 	println(req.headers)
@@ -63,8 +62,7 @@ fn (req &Request) do() Response {
 	internet := C.InternetOpenA(user_agent.str, INTERNET_OPEN_TYPE_PRECONFIG, 0, 0, 0)
 	// # if (!internet)
 	if isnil(internet) {
-		println('InternetOpen() failed')
-		return emptyresp
+		return error('InternetOpen() failed')
 	}
 	// # INTERNET_PORT port = INTERNET_DEFAULT_HTTP_PORT;
 	port := int(if is_ssl{INTERNET_DEFAULT_HTTPS_PORT} else { INTERNET_DEFAULT_HTTP_PORT})
@@ -74,12 +72,10 @@ fn (req &Request) do() Response {
 	connect := C.InternetConnectA(internet, host.str, port, 0, 0, INTERNET_SERVICE_HTTP, 0, 0)
 	// # HINTERNET connect = InternetConnectA(internet, host.str, port, NULL, NULL,
 	// # INTERNET_SERVICE_HTTP, 0, 0);
-	# if (!connect)
+	// # if (!connect)
 	if isnil(connect) {
 		e := C.GetLastError()
-		println('[windows] InternetConnect() failed')
-		C.printf('err=%d\n', e)
-		return emptyresp
+		return error('[windows] InternetConnect() failed: $e')
 	}
 	flags := 0
 	// # DWORD flags =
@@ -101,8 +97,7 @@ fn (req &Request) do() Response {
 	// # NULL, NULL, flags, NULL);
 	// # if (!request)
 	if isnil(request) {
-		println('HttpOpenRequest() failed')
-		return emptyresp
+		return error('HttpOpenRequest() failed')
 	}
 	// println('LEN BEFORE SEND=$headers.len ; $headers')
 	# bool ret =HttpSendRequest(request, headers.str, -1, data.str, data.len);
