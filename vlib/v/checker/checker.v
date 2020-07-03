@@ -2619,6 +2619,10 @@ pub fn (mut c Checker) index_expr(mut node ast.IndexExpr) table.Type {
 		typ_sym.name.ends_with('ptr')) && !typ.has_flag(.variadic) { // byteptr, charptr etc
 		c.error('type `$typ_sym.name` does not support indexing', node.pos)
 	}
+	if (typ.is_ptr() || typ_sym.is_pointer()) && !c.inside_unsafe {
+		c.error('pointer indexing is only allowed in `unsafe` blocks',
+			node.pos)
+	}
 	if !is_range {
 		index_type := c.expr(node.index)
 		index_type_sym := c.table.get_type_symbol(index_type)
@@ -2636,7 +2640,7 @@ pub fn (mut c Checker) index_expr(mut node ast.IndexExpr) table.Type {
 		if value_type != table.void_type {
 			return value_type
 		}
-	} else if is_range {
+	} else {
 		// array[1..2] => array
 		// fixed_array[1..2] => array
 		if typ_sym.kind == .array_fixed {
