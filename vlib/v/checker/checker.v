@@ -2400,6 +2400,20 @@ pub fn (mut c Checker) expr(node ast.Expr) table.Type {
 	}
 	match mut node {
 		ast.AnonFn {
+			stmts := node.decl.stmts
+			if stmts.len == 1 && stmts[0] is ast.ExprStmt {
+				es := stmts[0] as ast.ExprStmt
+				// infer from expression
+				if node.decl.return_type == table.void_type {
+					node.decl.return_type = es.typ
+				}
+				// implicit return
+				node.decl.stmts[0] = ast.Return {
+					pos: es.pos
+					exprs: [es.expr]
+					types: [es.typ]
+				}
+			}
 			keep_fn := c.cur_fn
 			c.cur_fn = &node.decl
 			c.stmts(node.decl.stmts)

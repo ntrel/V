@@ -233,9 +233,8 @@ pub:
 }
 
 pub struct AnonFn {
-pub:
-	decl FnDecl
 pub mut:
+	decl FnDecl
 	typ  table.Type
 }
 
