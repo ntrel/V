@@ -123,7 +123,6 @@ fn (mut p Parser) fn_decl() ast.FnDecl {
 	p.top_level_statement_start()
 	start_pos := p.tok.position()
 	is_deprecated := 'deprecated' in p.attrs
-	mut is_unsafe := 'unsafe_fn' in p.attrs
 	is_pub := p.tok.kind == .key_pub
 	if is_pub {
 		p.next()
@@ -132,7 +131,6 @@ fn (mut p Parser) fn_decl() ast.FnDecl {
 	p.open_scope()
 	// C. || JS.
 	language := if p.tok.kind == .name && p.tok.lit == 'C' {
-		is_unsafe = !('trusted_fn' in p.attrs)
 		table.Language.c
 	} else if p.tok.kind == .name && p.tok.lit == 'JS' {
 		table.Language.js
@@ -239,6 +237,9 @@ fn (mut p Parser) fn_decl() ast.FnDecl {
 		end_pos = p.tok.position()
 		return_type = p.parse_type()
 	}
+	no_body := p.tok.kind != .lcbr
+	// we can't verify argument types, so fn prototypes have to be unsafe by default
+	is_unsafe := if no_body {!('trusted_fn' in p.attrs)} else {'unsafe_fn' in p.attrs}
 	ctdefine := p.attr_ctdefine
 	// Register
 	if is_method {
@@ -286,7 +287,6 @@ fn (mut p Parser) fn_decl() ast.FnDecl {
 	// Body
 	p.cur_fn_name = name
 	mut stmts := []ast.Stmt{}
-	no_body := p.tok.kind != .lcbr
 	body_start_pos := p.peek_tok.position()
 	if p.tok.kind == .lcbr {
 		stmts = p.parse_block_no_scope(true)
