@@ -474,7 +474,7 @@ pub mut:
 
 pub struct UnsafeExpr {
 pub:
-	stmts []Stmt
+	expr  Expr
 	pos   token.Position
 }
 
@@ -1054,6 +1054,15 @@ pub fn (expr Expr) position() token.Position {
 			return token.Position{}
 		}
 	}
+}
+
+pub fn (expr Expr) is_expr() bool {
+	match expr {
+		IfExpr {return expr.is_expr}
+		MatchExpr {return expr.is_expr}
+		else {}
+	}
+	return true
 }
 
 pub fn (stmt Stmt) position() token.Position {
