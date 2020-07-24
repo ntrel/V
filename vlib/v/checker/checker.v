@@ -1918,7 +1918,6 @@ fn (mut c Checker) stmt(node ast.Stmt) {
 			c.stmts(node.stmts)
 		}
 		ast.CompIf {
-			// c.expr(node.cond)
 			c.stmts(node.stmts)
 			if node.has_else {
 				c.stmts(node.else_stmts)
