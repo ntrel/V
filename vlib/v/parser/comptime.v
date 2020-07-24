@@ -254,15 +254,17 @@ fn (mut p Parser) comp_if() ast.Stmt {
 		skip = false
 	}
 	mut is_opt := false
-	mut is_typecheck := false
-	mut typ := table.Type(0)
+	mut right := ''
 	if p.tok.kind == .question {
 		p.next()
 		is_opt = true
-	} else if p.tok.kind == .key_is {
+	} else if p.tok.kind == .eq {
 		p.next()
-		typ = p.parse_type()
-		is_typecheck = true
+		right = p.tok.lit
+		p.check(.string)
+	}
+	if p.mod == 'main'{
+		println(right)
 	}
 	if !skip {
 		stmts = p.parse_block()
@@ -270,10 +272,9 @@ fn (mut p Parser) comp_if() ast.Stmt {
 	mut node := ast.CompIf{
 		is_not: is_not
 		is_opt: is_opt
-		is_typecheck: is_typecheck
+		is_eq: right.len > 0
+		right: right
 		pos: pos
-		val: val
-		typ: typ
 		stmts: stmts
 	}
 	if p.tok.kind == .dollar && p.peek_tok.kind == .key_else {

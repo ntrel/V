@@ -92,11 +92,11 @@ fn (mut g Gen) comp_if(mut it ast.CompIf) {
 	if it.stmts.len == 0 && it.else_stmts.len == 0 {
 		return
 	}
-	if it.is_typecheck {
-		g.writeln('{ // \$if $it.val typecheck start')
-		it.type_match = g.tmp_comp_for_ret_type == it.typ
+	if it.is_eq {
+		println('== $g.tmp_comp_for_ret_type')
+		g.writeln("{ // \$if $it.val == '$it.right'")
 		mut stmts := it.stmts
-		if !it.type_match {
+		if g.tmp_comp_for_ret_type != it.right {
 			stmts = []ast.Stmt{}
 			if it.has_else {
 				stmts = it.else_stmts
@@ -153,7 +153,7 @@ fn (mut g Gen) comp_for(node ast.CompFor) {
 				continue
 			}
 			*/
-			g.tmp_comp_for_ret_type = table.Type(0)
+			g.tmp_comp_for_ret_type = ''
 			g.comp_for_method = method.name
 			g.writeln('\t// method $i')
 			g.write('\t')
@@ -181,7 +181,7 @@ fn (mut g Gen) comp_for(node ast.CompFor) {
 				ret_type = g.table.types[int(method.return_type)]
 			}
 			g.writeln('.ret_type = tos_lit("$ret_type.str()"),};')
-			g.tmp_comp_for_ret_type = method.return_type
+			g.tmp_comp_for_ret_type = g.table.type_to_str(method.return_type)
 			g.stmts(node.stmts)
 			i++
 			g.writeln('')
@@ -194,7 +194,7 @@ fn (mut g Gen) comp_for(node ast.CompFor) {
 			fields_with_attrs := info.fields.filter(it.attrs.len > 0)
 			fields << fields_with_attrs
 			for field in fields {
-				g.tmp_comp_for_ret_type = table.Type(0)
+				g.tmp_comp_for_ret_type = ''
 				g.writeln('\t// field $i')
 				g.write('\t')
 				if i == 0 {
@@ -217,7 +217,7 @@ fn (mut g Gen) comp_for(node ast.CompFor) {
 					ret_type = g.table.types[field.typ.idx()]
 				}
 				g.writeln('.typ = tos_lit("$ret_type.str()"),')
-				g.tmp_comp_for_ret_type = field.typ
+				g.tmp_comp_for_ret_type = g.table.type_to_str(field.typ)
 				g.write('\t')
 				g.writeln('.is_pub = $field.is_pub, .is_mut = $field.is_mut,};')
 				g.stmts(node.stmts)

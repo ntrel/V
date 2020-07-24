@@ -530,11 +530,10 @@ pub:
 	val        string
 	stmts      []Stmt
 	is_not     bool
-	is_typecheck bool
-	typ        table.Type
+	is_eq      bool // == right
+	right      string
 	pos        token.Position
 pub mut:
-	type_match bool
 	is_opt     bool
 	has_else   bool
 	else_stmts []Stmt
