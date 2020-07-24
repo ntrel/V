@@ -210,9 +210,9 @@ fn module_path(mod string) string {
 	return mod.replace('.', os.path_separator)
 }
 
-pub fn (b Builder) find_module_path(mod, fpath string) ?string {
+pub fn (b &Builder) find_module_path(mod, fpath string) ?string {
 	// support @VROOT/v.mod relative paths:
-	mcache := vmod.get_cache()
+	mut mcache := vmod.get_cache()
 	vmod_file_location := mcache.get_by_file(fpath)
 	mod_path := module_path(mod)
 	mut module_lookup_paths := []string{}
