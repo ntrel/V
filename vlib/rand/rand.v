@@ -131,6 +131,7 @@ pub fn f64_in_range(min, max f64) f64 {
 
 const (
 	chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	hex_chars = '0123456789abcdef'
 )
 
 pub fn string(len int) string {
@@ -141,4 +142,28 @@ pub fn string(len int) string {
 		}
 	}
 	return string(buf, len)
+}
+
+// rand.uuid_v4 generate a completely random UUID (v4)
+// See https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)
+pub fn uuid_v4() string {
+	mut buf := malloc(37)
+	for i in 0..36 {
+		mut v := intn(16)
+		if i == 19 {
+			v = (v & 0x3) | 0x8
+		}
+		unsafe {
+			buf[i] = hex_chars[v]
+		}
+	}
+	unsafe {
+		buf[8] = `-`
+		buf[13] = `-`
+		buf[14] = `4`
+		buf[18] = `-`
+		buf[23] = `-`
+		buf[36] = 0
+	}
+	return string(buf, 36)
 }
