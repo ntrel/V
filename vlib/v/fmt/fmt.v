@@ -906,11 +906,17 @@ pub fn (mut f Fmt) expr(node ast.Expr) {
 			panic('fmt: OrExpr should be linked to CallExpr')
 		}
 		ast.ParExpr {
-			f.write('(')
-			f.par_level++
-			f.expr(node.expr)
-			f.par_level--
-			f.write(')')
+			if node.is_unsafe {
+				f.write('unsafe {')
+				f.expr(node.expr)
+				f.write('}')
+			} else {
+				f.write('(')
+				f.par_level++
+				f.expr(node.expr)
+				f.par_level--
+				f.write(')')
+			}
 		}
 		ast.PostfixExpr {
 			f.expr(node.expr)

@@ -90,16 +90,15 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 		.key_unsafe {
 			// unsafe {
 			p.next()
-			pos := p.tok.position()
+			p.check(.lcbr)
 			assert !p.inside_unsafe
 			p.inside_unsafe = true
-			p.check(.lcbr)
-			node = ast.UnsafeExpr{
+			node = ast.ParExpr{
 				expr: p.expr(0)
-				pos: pos
+				is_unsafe: true
 			}
-			p.check(.rcbr)
 			p.inside_unsafe = false
+			p.check(.rcbr)
 		}
 		.key_lock, .key_rlock {
 			node = p.lock_expr()

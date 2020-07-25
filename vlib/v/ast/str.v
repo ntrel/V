@@ -215,6 +215,9 @@ pub fn (x Expr) str() string {
 			return '${it.left.str()} $it.op.str() ${it.right.str()}'
 		}
 		ParExpr {
+			if it.is_unsafe {
+				return 'unsafe {$it.expr}'
+			}
 			return '($it.expr)'
 		}
 		PrefixExpr {

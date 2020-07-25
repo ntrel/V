@@ -1878,12 +1878,13 @@ fn (mut p Parser) unsafe_stmt() ast.Stmt {
 			// `unsafe {expr}`
 			if stmt.expr.is_expr() {
 				p.next()
-				ue := ast.UnsafeExpr{
+				// turn into `(expr)`
+				par := ast.ParExpr{
 					expr: stmt.expr
-					pos: pos
+					is_unsafe: true
 				}
 				// parse e.g. `unsafe {expr}.foo()`
-				expr := p.expr_with_left(ue, 0, p.is_stmt_ident)
+				expr := p.expr_with_left(par, 0, p.is_stmt_ident)
 				return ast.ExprStmt{
 					expr: expr
 					pos: pos
