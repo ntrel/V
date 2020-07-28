@@ -47,6 +47,7 @@ pub mut:
 	it_name           string // the name to replace `it` with
 	inside_lambda     bool
 	is_mbranch_expr   bool // math a { x...y { } }
+	inside_unsafe     bool
 }
 
 pub fn fmt(file ast.File, table &table.Table, is_debug bool) string {
@@ -285,7 +286,10 @@ pub fn (mut f Fmt) stmt(node ast.Stmt) {
 				f.write('unsafe ')
 			}
 			f.writeln('{')
+			assert !f.inside_unsafe
+			f.inside_unsafe = true
 			f.stmts(node.stmts)
+			f.inside_unsafe = false
 			f.writeln('}')
 		}
 		ast.BranchStmt {
@@ -771,13 +775,23 @@ pub fn (mut f Fmt) expr(node ast.Expr) {
 		}
 		ast.CastExpr {
 			node.typname = f.table.get_type_symbol(node.typ).name
-			f.write(f.table.type_to_str(node.typ) + '(')
+			mut close := false
+			if !f.inside_unsafe && node.expr is ast.IntegerLiteral && (node.typ.is_ptr() ||
+				node.typ.is_pointer()) {
+				f.write('unsafe(')
+				close = true
+			}
+			f.write(f.table.type_to_str(node.typ))
+			f.write('(')
 			f.expr(node.expr)
 			if node.has_arg {
 				f.write(', ')
 				f.expr(node.arg)
 			}
 			f.write(')')
+			if close {
+				f.write(')')
+			}
 		}
 		ast.AtExpr {
 			f.at_expr(node)
@@ -1100,7 +1114,10 @@ pub fn (mut f Fmt) expr(node ast.Expr) {
 		}
 		ast.UnsafeExpr {
 			f.write('unsafe {')
+			assert !f.inside_unsafe
+			f.inside_unsafe = true
 			f.expr(node.expr)
+			f.inside_unsafe = false
 			f.write('}')
 		}
 	}
