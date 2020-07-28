@@ -795,7 +795,7 @@ pub:
 	typ       table.Type // `string` TODO rename to `type_to_cast_to`
 	pos       token.Position
 pub mut:
-	typname   string
+	typname   string // TypeSymbol.name
 	expr_type table.Type // `byteptr`
 	has_arg   bool
 }
