@@ -46,6 +46,7 @@ pub mut:
 	mod2alias         map[string]string // for `import time as t`, will contain: 'time'=>'t'
 	use_short_fn_args bool
 	it_name           string // the name to replace `it` with
+	inside_unsafe     bool
 }
 
 pub fn fmt(file ast.File, table &table.Table, is_debug bool) string {
@@ -291,7 +292,10 @@ pub fn (mut f Fmt) stmt(node ast.Stmt) {
 				f.write('unsafe ')
 			}
 			f.writeln('{')
+			assert !f.inside_unsafe
+			f.inside_unsafe = true
 			f.stmts(node.stmts)
+			f.inside_unsafe = false
 			f.writeln('}')
 		}
 		ast.BranchStmt {
@@ -788,13 +792,23 @@ pub fn (mut f Fmt) expr(node ast.Expr) {
 		}
 		ast.CastExpr {
 			node.typname = f.table.get_type_symbol(node.typ).name
-			f.write(f.type_to_str(node.typ) + '(')
+			mut close := false
+			if !f.inside_unsafe && node.expr is ast.IntegerLiteral && (node.typ.is_ptr() ||
+				node.typ.is_pointer()) {
+				f.write('unsafe(')
+				close = true
+			}
+			f.write(f.type_to_str(node.typ))
+			f.write('(')
 			f.expr(node.expr)
 			if node.has_arg {
 				f.write(', ')
 				f.expr(node.arg)
 			}
 			f.write(')')
+			if close {
+				f.write(')')
+			}
 		}
 		ast.CallExpr {
 			f.call_expr(node)
@@ -1074,7 +1088,10 @@ pub fn (mut f Fmt) expr(node ast.Expr) {
 		ast.UnsafeExpr {
 			f.write('unsafe {')
 			es := node.stmts[0] as ast.ExprStmt
+			assert !f.inside_unsafe
+			f.inside_unsafe = true
 			f.expr(es.expr)
+			f.inside_unsafe = false
 			f.write('}')
 		}
 	}
