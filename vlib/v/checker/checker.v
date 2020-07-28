@@ -3072,7 +3072,7 @@ pub fn (mut c Checker) cast_expr(mut node ast.CastExpr) table.Type {
 	node.expr_type = c.expr(node.expr)
 	from_type_sym := c.table.get_type_symbol(node.expr_type)
 	to_type_sym := c.table.get_type_symbol(node.typ)
-	expr_is_ptr := node.expr_type.is_ptr() || node.expr_type.idx() in table.pointer_type_idxs
+	expr_is_ptr := node.expr_type.is_ptr() || node.expr_type.is_pointer()
 	if expr_is_ptr && to_type_sym.kind == .string && !node.in_prexpr {
 		if node.has_arg {
 			c.warn('to convert a C string buffer pointer to a V string, please use x.vstring_with_len(len) instead of string(x,len)',
@@ -3138,6 +3138,23 @@ pub fn (mut c Checker) cast_expr(mut node ast.CastExpr) table.Type {
 	} else if node.expr_type == table.none_type {
 		type_name := c.table.type_to_str(node.typ)
 		c.error('cannot cast `none` to `$type_name`', node.pos)
+	} else if !c.inside_unsafe && (node.typ.is_ptr() || node.typ.is_pointer()) {
+		// allow &T -> voidptr
+		mut warn := !(node.typ == table.voidptr_type_idx && node.expr_type.is_ptr())
+		// conversion between C pointers is safe unless from voidptr
+		warn = warn && !(node.expr_type != table.voidptr_type_idx && node.expr_type.is_pointer() &&
+			node.typ.is_pointer())
+		// allow &byte -> byteptr
+		warn = warn && !(node.typ == table.byteptr_type && node.expr_type.nr_muls() == 1 &&
+			from_type_sym.kind == .byte)
+		// allow &char -> charptr
+		warn = warn && !(node.typ == table.charptr_type && node.expr_type.nr_muls() == 1 &&
+			from_type_sym.kind == .char)
+		if warn {
+			ft := c.table.type_to_str(node.expr_type)
+			tt := c.table.type_to_str(node.typ)
+			c.warn('casting $ft to $tt is only allowed in `unsafe` code', node.pos)
+		}
 	}
 	if node.has_arg {
 		c.expr(node.arg)
