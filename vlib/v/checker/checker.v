@@ -2875,9 +2875,11 @@ pub fn (mut c Checker) if_expr(mut node ast.IfExpr) table.Type {
 	mut require_return := false
 	mut branch_without_return := false
 	for i, branch in node.branches {
-		if branch.cond is ast.ParExpr {
-			c.error('unnecessary `()` in an if condition. use `if expr {` instead of `if (expr) {`.',
-				branch.pos)
+		if branch.cond is ast.ParExpr as par {
+			if !par.is_unsafe {
+				c.error('unnecessary `()` in an if condition. use `if expr {` instead of `if (expr) {`.',
+					branch.pos)
+			}
 		}
 		if !node.has_else || i < node.branches.len - 1 {
 			// check condition type is boolean
