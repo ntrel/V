@@ -16,9 +16,9 @@ fn test_ptr_assign() {
 
 fn test_ptr_infix() {
 	v := 4
-	mut q := unsafe(&v - 1)
-	q = unsafe(q + 3)
-	assert q == unsafe(&v + 2)
+	mut q := unsafe {&v - 1}
+	q = unsafe {q + 3}
+	assert q == unsafe {&v + 2}
 }
 
 struct S1 {

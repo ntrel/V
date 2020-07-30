@@ -89,26 +89,16 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 		}
 		.key_unsafe {
 			p.next()
-			pos := p.tok.position()
+			p.check(.lcbr)
 			assert !p.inside_unsafe
 			p.inside_unsafe = true
-			if p.tok.kind == .lpar {
-				// unsafe(
-				p.check(.lpar)
-				node = ast.ParExpr{
-					expr: p.expr(0)
-					is_unsafe: true
-				}
-				p.check(.rpar)
-			} else {
-				// unsafe {
-				// old syntax, UnsafeExpr can be removed later
-				node = ast.UnsafeExpr{
-					stmts: p.parse_block()
-					pos: pos
-				}
+			// unsafe {
+			node = ast.ParExpr{
+				expr: p.expr(0)
+				is_unsafe: true
 			}
 			p.inside_unsafe = false
+			p.check(.rcbr)
 		}
 		.key_lock, .key_rlock {
 			node = p.lock_expr()
