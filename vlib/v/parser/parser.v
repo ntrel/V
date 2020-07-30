@@ -602,23 +602,7 @@ pub fn (mut p Parser) stmt(is_top_level bool) ast.Stmt {
 			}
 		}
 		.key_unsafe {
-			// unsafe {
-			if p.peek_tok.kind == .lcbr {
-				p.next()
-				assert !p.inside_unsafe
-				p.inside_unsafe = true
-				stmts := p.parse_block()
-				p.inside_unsafe = false
-				return ast.UnsafeStmt{
-					stmts: stmts
-				}
-			}
-			// unsafe(
-			pos := p.tok.position()
-			return ast.ExprStmt{
-				expr: p.expr(0)
-				pos: pos
-			}
+			return p.unsafe_stmt()
 		}
 		.hash {
 			return p.hash()
@@ -1871,4 +1855,44 @@ pub fn (mut p Parser) mark_var_as_used(varname string) bool {
 		}
 	}
 	return false
+}
+
+fn (mut p Parser) unsafe_stmt() ast.Stmt {
+	pos := p.tok.position()
+	p.next()
+	p.check(.lcbr)
+	assert !p.inside_unsafe
+	p.inside_unsafe = true
+	p.open_scope() // needed in case of `unsafe {stmt}`
+	defer {
+		p.inside_unsafe = false
+		p.close_scope()
+	}
+	stmt := p.stmt(false)
+	// `unsafe {expr}`
+	if p.tok.kind == .rcbr {
+		if stmt is ast.ExprStmt {
+			p.next()
+			// turn into `(expr)`
+			par := ast.ParExpr{
+				expr: stmt.expr
+				is_unsafe: true
+			}
+			// parse e.g. `unsafe {expr}.foo`
+			expr := p.expr_with_left(0, par, p.is_stmt_ident)
+			return ast.ExprStmt {
+				expr: expr
+				pos: pos
+			}
+		}
+	}
+	// unsafe {stmts}
+	mut stmts := [stmt]
+	for p.tok.kind != .rcbr {
+		stmts << p.stmt(false)
+	}
+	p.next()
+	return ast.UnsafeStmt{
+		stmts: stmts
+	}
 }

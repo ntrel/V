@@ -13,7 +13,6 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 		eprintln('parsing file: ${p.file_name:-30} | tok.kind: ${p.tok.kind:-10} | tok.lit: ${p.tok.lit:-10} | tok_pos: ${tok_pos.str():-45} | expr($precedence)')
 	}
 	// println('\n\nparser.expr()')
-	mut typ := table.void_type
 	mut node := ast.Expr{}
 	is_stmt_ident := p.is_stmt_ident
 	p.is_stmt_ident = false
@@ -223,6 +222,11 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 			p.error('expr(): bad token `$p.tok.kind.str()`')
 		}
 	}
+	return p.expr_with_left(precedence, node, is_stmt_ident)
+}
+
+pub fn (mut p Parser) expr_with_left(precedence int, left ast.Expr, is_stmt_ident bool) ast.Expr {
+	mut node := left
 	// Infix
 	for precedence < p.tok.precedence() {
 		if p.tok.kind == .dot {
@@ -239,7 +243,7 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 			// sum type as cast `x := SumType as Variant`
 			pos := p.tok.position()
 			p.next()
-			typ = p.parse_type()
+			typ := p.parse_type()
 			node = ast.AsCast{
 				expr: node
 				typ: typ
