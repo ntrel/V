@@ -53,3 +53,17 @@ fn test_unsafe_if_stmt() int {
 	}
 	return i
 }
+
+fn test_unsafe_expr_call() {
+	mut a := [3,4]
+	unsafe {*(&a)}.trim(1)
+	assert a == [3]
+}
+
+fn test_unsafe_expr_op() {
+	mut v := 5
+	mut p := &v
+	unsafe {p[0]}++
+	assert v == 6
+}
+
