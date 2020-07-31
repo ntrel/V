@@ -1057,6 +1057,15 @@ pub fn (expr Expr) position() token.Position {
 	}
 }
 
+pub fn (expr Expr) is_expr() bool {
+	match expr {
+		IfExpr {return expr.is_expr}
+		MatchExpr {return expr.is_expr}
+		else {}
+	}
+	return true
+}
+
 pub fn (stmt Stmt) position() token.Position {
 	match stmt {
 		AssertStmt { return stmt.pos }

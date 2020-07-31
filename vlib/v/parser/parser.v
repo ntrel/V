@@ -1872,17 +1872,19 @@ fn (mut p Parser) unsafe_stmt() ast.Stmt {
 	// `unsafe {expr}`
 	if p.tok.kind == .rcbr {
 		if stmt is ast.ExprStmt {
-			p.next()
-			// turn into `(expr)`
-			par := ast.ParExpr{
-				expr: stmt.expr
-				is_unsafe: true
-			}
-			// parse e.g. `unsafe {expr}.foo`
-			expr := p.expr_with_left(0, par, p.is_stmt_ident)
-			return ast.ExprStmt {
-				expr: expr
-				pos: pos
+			if stmt.expr.is_expr() {
+				p.next()
+				// turn into `(expr)`
+				par := ast.ParExpr{
+					expr: stmt.expr
+					is_unsafe: true
+				}
+				// parse e.g. `unsafe {expr}.foo`
+				expr := p.expr_with_left(par, 0, p.is_stmt_ident)
+				return ast.ExprStmt {
+					expr: expr
+					pos: pos
+				}
 			}
 		}
 	}

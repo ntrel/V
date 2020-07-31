@@ -212,10 +212,10 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 			p.error('expr(): bad token `$p.tok.kind.str()`')
 		}
 	}
-	return p.expr_with_left(precedence, node, is_stmt_ident)
+	return p.expr_with_left(node, precedence, is_stmt_ident)
 }
 
-pub fn (mut p Parser) expr_with_left(precedence int, left ast.Expr, is_stmt_ident bool) ast.Expr {
+pub fn (mut p Parser) expr_with_left(left ast.Expr, precedence int, is_stmt_ident bool) ast.Expr {
 	mut node := left
 	// Infix
 	for precedence < p.tok.precedence() {
