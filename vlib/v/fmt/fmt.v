@@ -907,7 +907,10 @@ pub fn (mut f Fmt) expr(node ast.Expr) {
 		}
 		ast.ParExpr {
 			if node.is_unsafe {
-				f.write('unsafe')
+				f.write('unsafe {')
+				f.expr(node.expr)
+				f.write('}')
+				return
 			}
 			f.write('(')
 			f.par_level++
