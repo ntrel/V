@@ -2430,9 +2430,6 @@ pub fn (mut c Checker) expr(node ast.Expr) table.Type {
 			node.expr_type = c.expr(node.expr)
 			return table.string_type
 		}
-		ast.UnsafeExpr {
-			return c.unsafe_expr(mut node)
-		}
 		ast.Likely {
 			ltype := c.expr(node.expr)
 			if !c.check_types(ltype, table.bool_type) {
@@ -2834,14 +2831,6 @@ pub fn (mut c Checker) lock_expr(mut node ast.LockExpr) table.Type {
 	}
 	// void for now... maybe sometime `x := lock a { a.getval() }`
 	return table.void_type
-}
-
-pub fn (mut c Checker) unsafe_expr(mut node ast.UnsafeExpr) table.Type {
-	assert !c.inside_unsafe
-	c.inside_unsafe = true
-	t := c.expr(node.expr)
-	c.inside_unsafe = false
-	return t
 }
 
 pub fn (mut c Checker) if_expr(mut node ast.IfExpr) table.Type {

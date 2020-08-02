@@ -266,9 +266,6 @@ pub fn (x Expr) str() string {
 		Likely {
 			return '_likely_(${it.expr.str()})'
 		}
-		UnsafeExpr {
-			return 'unsafe { $it.expr }'
-		}
 		else {}
 	}
 	return '[unhandled expr type ${typeof(x)}]'

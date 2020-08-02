@@ -1940,9 +1940,6 @@ fn (mut g Gen) expr(node ast.Expr) {
 			g.expr(node.expr)
 			g.write(')')
 		}
-		ast.UnsafeExpr {
-			g.expr(node.expr)
-		}
 	}
 }
 

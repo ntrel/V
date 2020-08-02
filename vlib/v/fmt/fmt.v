@@ -907,9 +907,16 @@ pub fn (mut f Fmt) expr(node ast.Expr) {
 		}
 		ast.ParExpr {
 			if node.is_unsafe {
+				f.writeln('unsafe {')
+				f.write('\t')
+				f.expr(node.expr)
+				f.writeln('')
+				f.write('}')
+				/* FIXME
 				f.write('unsafe {')
 				f.expr(node.expr)
 				f.write('}')
+				*/
 			} else {
 				f.write('(')
 				f.par_level++
@@ -1064,13 +1071,6 @@ pub fn (mut f Fmt) expr(node ast.Expr) {
 			f.write('(')
 			f.expr(node.expr)
 			f.write(')')
-		}
-		ast.UnsafeExpr {
-			f.writeln('unsafe {')
-			f.write('\t')
-			f.expr(node.expr)
-			f.writeln('')
-			f.write('}')
 		}
 	}
 }
