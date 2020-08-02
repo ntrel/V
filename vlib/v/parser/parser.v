@@ -1862,6 +1862,10 @@ fn (mut p Parser) unsafe_stmt() ast.Stmt {
 	p.next()
 	p.check(.lcbr)
 	assert !p.inside_unsafe
+	if p.tok.kind == .rcbr {
+		p.next()
+		return ast.UnsafeStmt{}
+	}
 	p.inside_unsafe = true
 	p.open_scope() // needed in case of `unsafe {stmt}`
 	defer {
