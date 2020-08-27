@@ -676,6 +676,25 @@ pub fn (mut c Checker) infix_expr(mut infix_expr ast.InfixExpr) table.Type {
 		c.error('string types only have the following operators defined: `==`, `!=`, `<`, `>`, `<=`, `>=`, and `+`',
 			infix_expr.pos)
 	}
+	if left_type.is_ptr() {
+		if infix_expr.op == .plus {
+			if right_type.is_ptr() {
+				s := c.table.type_to_str(right_type)
+				c.error('can only add an integer to a pointer, not a `$s`',
+					infix_expr.pos)
+			}
+			return left_type
+		} else if infix_expr.op == .minus {
+			if right_type.is_ptr() {
+				// TODO return isize
+			} else {
+				return left_type
+			}
+		} else if infix_expr.op !in [.eq, .ne] {
+			c.error('invalid pointer infix operation: `$infix_expr.op`',
+				infix_expr.pos)
+		}
+	}
 	// Dual sides check (compatibility check)
 	if !c.symmetric_check(right_type, left_type) && !c.pref.translated {
 		// for type-unresolved consts
