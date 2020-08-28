@@ -2102,6 +2102,10 @@ fn (mut g Gen) expr(node ast.Expr) {
 			g.struct_init(node)
 		}
 		ast.SelectorExpr {
+			if node.expr is ast.TypeOf {
+				g.expr(node.result)
+				return
+			}
 			sym := g.table.get_type_symbol(node.expr_type)
 			if sym.kind == .array_fixed {
 				assert node.field_name == 'len'

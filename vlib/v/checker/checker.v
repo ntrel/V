@@ -1469,16 +1469,14 @@ fn is_expr_panic_or_exit(expr ast.Expr) bool {
 }
 
 pub fn (mut c Checker) selector_expr(mut selector_expr ast.SelectorExpr) table.Type {
-	if selector_expr.expr is ast.Ident as ident {
+	if selector_expr.expr is ast.TypeOf as left {
 		if selector_expr.field_name == 'name' {
-			if ident.name in c.table.type_idxs {
-				// T.name
-				typ := c.table.find_type_idx(ident.name)
-				selector_expr.result = ast.StringLiteral{
-					val: c.table.type_to_str(typ)
-				}
-				return table.string_type
+			selector_expr.result = ast.StringLiteral{
+				val: c.table.type_to_str(left.expr_type)
 			}
+			return table.string_type
+		} else {
+			c.error('expected `.name`, not `.$selector_expr.field_name` after `typeof` expression', selector_expr.pos)
 		}
 	}
 	typ := c.expr(selector_expr.expr)
