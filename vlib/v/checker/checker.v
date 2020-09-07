@@ -746,6 +746,35 @@ pub fn (mut c Checker) infix_expr(mut infix_expr ast.InfixExpr) table.Type {
 	}
 }
 
+pub fn (c &Checker) is_mut(expr ast.Expr) bool {
+	match expr {
+		ast.Ident {
+			// `mut name :=`
+			if expr.is_mut {return true}
+			if expr.obj is ast.Var as var {
+				return var.is_mut
+			}
+			else if expr.obj is ast.GlobalDecl {return true}
+		}
+		ast.IndexExpr { return c.is_mut(expr.left) }
+		ast.SelectorExpr {
+			mut typ_sym := c.table.get_type_symbol(c.unwrap_generic(expr.expr_type))
+			if typ_sym.kind == .alias {
+				alias_info := typ_sym.info as table.Alias
+				typ_sym = c.table.get_type_symbol(alias_info.parent_type)
+			}
+			if typ_sym.kind == .struct_ {
+				info := typ_sym.info as table.Struct
+				if field := info.find_field(expr.field_name) {
+					return field.is_mut
+				}
+			}
+		}
+		else {}
+	}
+	return false
+}
+
 // returns name and position of variable that needs write lock
 fn (mut c Checker) fail_if_immutable(expr ast.Expr) (string, token.Position) {
 	mut to_lock := '' // name of variable that needs lock
@@ -1785,9 +1814,9 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 			// left_type = c.expr(left)
 		}
 		rsym := c.table.get_type_symbol(right_type)
-		if !c.inside_unsafe && rsym.kind == .array && right.is_lvalue() && !right.is_mut() {
+		if !c.inside_unsafe && rsym.kind == .array && right.is_lvalue() && !c.is_mut(right) {
 			//~ println('$right.name $right.is_mut')
-				if left.is_mut() {
+				if c.is_mut(left) {
 					//~ println('$left.name $left.is_mut')
 					//~ if left.is_mut {
 						c.warn('cannot assign immutable array to mutable array outside `unsafe`', left.position())
