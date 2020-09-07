@@ -1726,8 +1726,7 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 		left_first := assign_stmt.left[0]
 		if left_first is ast.Ident {
 			assigned_var := left_first
-			if node.right is ast.Ident {
-				ident := node.right as ast.Ident
+			if node.right is ast.Ident as ident {
 				scope := c.file.scope.innermost(node.pos.pos)
 				if v := scope.find_var(ident.name) {
 					right_type0 = v.typ
@@ -1784,6 +1783,16 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 			// Make sure the variable is mutable
 			c.fail_if_immutable(left)
 			// left_type = c.expr(left)
+		}
+		rsym := c.table.get_type_symbol(right_type)
+		if !c.inside_unsafe && rsym.kind == .array && right.is_lvalue() && !right.is_mut() {
+			//~ println('$right.name $right.is_mut')
+				if left.is_mut() {
+					//~ println('$left.name $left.is_mut')
+					//~ if left.is_mut {
+						c.warn('cannot assign immutable array to mutable array outside `unsafe`', left.position())
+					//~ }
+				}
 		}
 		assign_stmt.left_types << left_type
 		match mut left {

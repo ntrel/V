@@ -1087,6 +1087,22 @@ pub fn (expr Expr) is_lvalue() bool {
 	return false
 }
 
+pub fn (expr Expr) is_mut() bool {
+	match expr {
+		Ident {
+			if expr.is_mut {return true}
+			if expr.obj is Var as var {
+				println('$expr.name $var.is_mut')
+				return var.is_mut
+			}
+		}
+		IndexExpr { return expr.left.is_mut() }
+		//~ SelectorExpr { return expr.expr.is_lvalue() }
+		else {}
+	}
+	return false
+}
+
 pub fn (stmt Stmt) position() token.Position {
 	match stmt {
 		AssertStmt { return stmt.pos }
