@@ -2403,9 +2403,14 @@ pub fn (mut c Checker) expr(node ast.Expr) table.Type {
 			stmts := node.decl.stmts
 			if stmts.len == 1 && stmts[0] is ast.ExprStmt {
 				es := stmts[0] as ast.ExprStmt
-				// infer from expression
+				// infer return type
 				if node.decl.return_type == table.void_type {
+					c.stmt(es)
 					node.decl.return_type = es.typ
+					// update TypeInfo
+					sym := c.table.get_type_symbol(node.typ)
+					mut info := sym.info as table.FnType
+					info.func.return_type = es.typ
 				}
 				// implicit return
 				node.decl.stmts[0] = ast.Return {

@@ -320,6 +320,7 @@ pub struct FnType {
 pub:
 	is_anon  bool
 	has_decl bool
+pub mut:
 	func     Fn
 }
 

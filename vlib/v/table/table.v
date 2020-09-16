@@ -23,8 +23,6 @@ pub mut:
 pub struct Fn {
 pub:
 	args                    []Param
-	return_type             Type
-	return_type_source_name string
 	is_variadic             bool
 	language                Language
 	is_generic              bool
@@ -37,6 +35,8 @@ pub:
 	attrs                   []Attr
 pub mut:
 	name                    string
+	return_type             Type
+	return_type_source_name string
 }
 
 pub struct Param {
