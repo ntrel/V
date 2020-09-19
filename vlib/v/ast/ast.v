@@ -818,29 +818,21 @@ pub mut:
 }
 
 pub enum OrKind {
-	absent
-	block
-	propagate
+	expr      // opt or {expr}
+	block     // opt or {break}
+	propagate // opt?
 }
 
-// `or { ... }`
+// `left or { stmts }`
 pub struct OrExpr {
 pub:
+	left  Expr
 	stmts []Stmt
-	kind  OrKind
 	pos   token.Position
+pub mut:
+	kind  OrKind
 }
 
-/*
-// `or { ... }`
-pub struct OrExpr2 {
-pub:
-	call_expr CallExpr
-	stmts     []Stmt // inside `or { }`
-	kind      OrKind
-	pos       token.Position
-}
-*/
 pub struct Assoc {
 pub:
 	var_name string

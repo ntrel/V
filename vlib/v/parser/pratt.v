@@ -289,6 +289,40 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 			}
 			p.next()
 			// return node // TODO bring back, only allow ++/-- in exprs in translated code
+		} else if p.tok.kind in [.key_orelse, .question] {
+			// opt or {...}
+			mut or_stmts := []ast.Stmt{}
+			// default to expression, overridden in assign_stmt
+			mut or_kind := ast.OrKind.expr
+			if p.tok.kind == .key_orelse {
+				p.next()
+				p.open_scope()
+				p.scope.register('errcode', ast.Var{
+					name: 'errcode'
+					typ: table.int_type
+					pos: p.tok.position()
+					is_used: true
+				})
+				p.scope.register('err', ast.Var{
+					name: 'err'
+					typ: table.string_type
+					pos: p.tok.position()
+					is_used: true
+				})
+				or_stmts = p.parse_block_no_scope(false)
+				p.close_scope()
+			}
+			// `foo()?`
+			if p.tok.kind == .question {
+				p.next()
+				or_kind = .propagate
+			}
+			node = ast.OrExpr{
+				left: node
+				stmts: or_stmts
+				pos: pos
+				kind: or_kind
+			}
 		} else {
 			return node
 		}

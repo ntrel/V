@@ -1237,33 +1237,6 @@ fn (mut p Parser) dot_expr(left ast.Expr) ast.Expr {
 			p.error('needs exactly 1 argument')
 		}
 		p.check(.rpar)
-		mut or_stmts := []ast.Stmt{}
-		mut or_kind := ast.OrKind.absent
-		if p.tok.kind == .key_orelse {
-			p.next()
-			p.open_scope()
-			p.scope.register('errcode', ast.Var{
-				name: 'errcode'
-				typ: table.int_type
-				pos: p.tok.position()
-				is_used: true
-			})
-			p.scope.register('err', ast.Var{
-				name: 'err'
-				typ: table.string_type
-				pos: p.tok.position()
-				is_used: true
-			})
-			or_kind = .block
-			or_stmts = p.parse_block_no_scope(false)
-			p.close_scope()
-		}
-		// `foo()?`
-		if p.tok.kind == .question {
-			p.next()
-			or_kind = .propagate
-		}
-		//
 		end_pos := p.tok.position()
 		pos := token.Position{
 			line_nr: name_pos.line_nr
@@ -1276,11 +1249,6 @@ fn (mut p Parser) dot_expr(left ast.Expr) ast.Expr {
 			args: args
 			pos: pos
 			is_method: true
-			or_block: ast.OrExpr{
-				stmts: or_stmts
-				kind: or_kind
-				pos: pos
-			}
 		}
 		if is_filter || field_name == 'sort' {
 			p.close_scope()
