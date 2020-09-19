@@ -30,7 +30,6 @@ mut:
 	inside_if         bool
 	inside_if_expr    bool
 	inside_ct_if_expr bool
-	inside_or_expr    bool
 	inside_for        bool
 	inside_fn         bool
 	inside_str_interp bool
@@ -587,7 +586,7 @@ pub fn (mut p Parser) stmt(is_top_level bool) ast.Stmt {
 					}
 				} else if p.peek_tok.kind == .name {
 					p.error_with_pos('unexpected name `$p.peek_tok.lit`', p.peek_tok.position())
-				} else if !p.inside_if_expr && !p.inside_match_body && !p.inside_or_expr &&
+				} else if !p.inside_if_expr && !p.inside_match_body &&
 					p.peek_tok.kind in [.rcbr, .eof] {
 					p.error_with_pos('`$p.tok.lit` evaluated but not used', p.tok.position())
 				}
