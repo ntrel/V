@@ -1464,9 +1464,9 @@ fn (mut c Checker) type_implements(typ, inter_typ table.Type, pos token.Position
 	return true
 }
 
-pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr) table.Type {
+pub fn (mut c Checker) check_or_expr(or_expr ast.OrExpr) table.Type {
 	left_type := c.expr(or_expr.left)
-	unwrap_type := left_type.clear_flag(.optional)
+	ret_type := left_type.clear_flag(.optional)
 	if !left_type.has_flag(.optional) {
 		if or_expr.kind == .propagate {
 			c.error('unexpected `?`, `$or_expr.left` is not an optional',
@@ -1475,24 +1475,24 @@ pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr) table.Type {
 			c.error('unexpected `or` block, `$or_expr.left` is not an optional',
 				or_expr.pos)
 		} 
-		return unwrap_type
+		return ret_type
 	}
 	if or_expr.kind == .propagate {
 		if !c.cur_fn.return_type.has_flag(.optional) && c.cur_fn.name != 'main.main' {
 			c.error('to propagate the optional call, `$c.cur_fn.name` must itself return an optional',
 				or_expr.pos)
 		}
-		return unwrap_type
+		return ret_type
 	}
 	stmts_len := or_expr.stmts.len
 	if stmts_len == 0 {
 		if left_type != table.void_type {
 			// x := f() or {}
 			c.error('assignment requires a non empty `or {}` block', or_expr.pos)
-			return unwrap_type
+			return ret_type
 		}
 		// allow `f() or {}`
-		return unwrap_type
+		return ret_type
 	}
 	mut last_stmt := or_expr.stmts[stmts_len - 1]
 	if ret_type != table.void_type {
@@ -1502,7 +1502,7 @@ pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr) table.Type {
 				type_fits := c.check_types(last_stmt.typ, ret_type)
 				is_panic_or_exit := is_expr_panic_or_exit(last_stmt.expr)
 				if type_fits || is_panic_or_exit {
-					return unwrap_type
+					return ret_type
 				}
 				type_name := c.table.type_to_str(last_stmt.typ)
 				expected_type_name := c.table.type_to_str(ret_type.clear_flag(.optional))
@@ -1513,7 +1513,7 @@ pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr) table.Type {
 				if last_stmt.tok.kind !in [.key_continue, .key_break] {
 					c.error('only break/continue is allowed as a branch statement in the end of an `or {}` block',
 						last_stmt.tok.position())
-					return unwrap_type
+					return ret_type
 				}
 			}
 			ast.Return {}
@@ -1524,7 +1524,7 @@ pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr) table.Type {
 			}
 		}
 	}
-	return unwrap_type
+	return ret_type
 }
 
 fn is_expr_panic_or_exit(expr ast.Expr) bool {
@@ -1711,9 +1711,7 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 	mut right_type0 := table.void_type
 	if right_first is ast.CallExpr || right_first is ast.IfExpr || right_first is ast.MatchExpr {
 		right_type0 = c.expr(right_first)
-		assign_stmt.right_types = [
-			c.check_expr_opt_call(right_first, right_type0),
-		]
+		assign_stmt.right_types = [right_type0]
 		right_type_sym0 := c.table.get_type_symbol(right_type0)
 		if right_type_sym0.kind == .multi_return {
 			assign_stmt.right_types = right_type_sym0.mr_info().types
@@ -1779,9 +1777,8 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 			c.expected_type = c.unwrap_generic(left_type)
 		}
 		if assign_stmt.right_types.len < assign_stmt.left.len { // first type or multi return types added above
-			right_type := c.expr(assign_stmt.right[i])
 			if assign_stmt.right_types.len == i {
-				assign_stmt.right_types << c.check_expr_opt_call(assign_stmt.right[i], right_type)
+				assign_stmt.right_types << c.expr(assign_stmt.right[i])
 			}
 		}
 		right := if i < assign_stmt.right.len { assign_stmt.right[i] } else { assign_stmt.right[0] }
@@ -2158,9 +2155,6 @@ fn (mut c Checker) stmt(node ast.Stmt) {
 		ast.ExprStmt {
 			node.typ = c.expr(node.expr)
 			c.expected_type = table.void_type
-			c.check_expr_opt_call(node.expr, table.void_type)
-			// TODO This should work, even if it's prolly useless .-.
-			// node.typ = c.check_expr_opt_call(node.expr, table.void_type)
 		}
 		ast.FnDecl {
 			c.fn_decl(mut node)
@@ -2585,6 +2579,9 @@ pub fn (mut c Checker) expr(node ast.Expr) table.Type {
 		ast.MatchExpr {
 			return c.match_expr(mut node)
 		}
+		ast.OrExpr {
+			return c.check_or_expr(node)
+		}
 		ast.PostfixExpr {
 			return c.postfix_expr(node)
 		}
@@ -2623,13 +2620,6 @@ pub fn (mut c Checker) expr(node ast.Expr) table.Type {
 		ast.None {
 			return table.none_type
 		}
-		ast.OrExpr {
-			// never happens
-			return table.void_type
-		}
-		// ast.OrExpr2 {
-		// return node.typ
-		// }
 		ast.ParExpr {
 			return c.expr(node.expr)
 		}
