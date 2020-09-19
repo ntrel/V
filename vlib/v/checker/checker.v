@@ -897,7 +897,6 @@ fn (mut c Checker) fail_if_immutable(expr ast.Expr) (string, token.Position) {
 }
 
 pub fn (mut c Checker) call_expr(mut call_expr ast.CallExpr) table.Type {
-	c.stmts(call_expr.or_block.stmts)
 	typ := if call_expr.is_method { c.call_method(call_expr) } else { c.call_fn(call_expr) }
 	// autofree
 	free_tmp_arg_vars := c.pref.autofree && c.pref.experimental && !c.is_builtin_mod &&
@@ -1465,50 +1464,35 @@ fn (mut c Checker) type_implements(typ, inter_typ table.Type, pos token.Position
 	return true
 }
 
-// return the actual type of the expression, once the optional is handled
-pub fn (mut c Checker) check_expr_opt_call(expr ast.Expr, ret_type table.Type) table.Type {
-	if expr is ast.CallExpr {
-		if expr.return_type.has_flag(.optional) {
-			if expr.or_block.kind == .absent {
-				if ret_type != table.void_type {
-					c.error('${expr.name}() returns an option, but you missed to add an `or {}` block to it',
-						expr.pos)
-				}
-			} else {
-				c.check_or_expr(expr.or_block, ret_type)
-			}
-			// remove optional flag
-			// return ret_type.clear_flag(.optional)
-			// TODO: currently unwrapped in assign, would need to refactor assign to unwrap here
-			return ret_type
-		} else if expr.or_block.kind == .block {
-			c.error('unexpected `or` block, the function `$expr.name` does not return an optional',
-				expr.pos)
-		} else if expr.or_block.kind == .propagate {
-			c.error('unexpected `?`, the function `$expr.name`, does not return an optional',
-				expr.pos)
-		}
+pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr) table.Type {
+	left_type := c.expr(or_expr.left)
+	unwrap_type := left_type.clear_flag(.optional)
+	if !left_type.has_flag(.optional) {
+		if or_expr.kind == .propagate {
+			c.error('unexpected `?`, `$or_expr.left` is not an optional',
+				or_expr.pos)
+		} else {
+			c.error('unexpected `or` block, `$or_expr.left` is not an optional',
+				or_expr.pos)
+		} 
+		return unwrap_type
 	}
-	return ret_type
-}
-
-pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr, ret_type table.Type) {
 	if or_expr.kind == .propagate {
 		if !c.cur_fn.return_type.has_flag(.optional) && c.cur_fn.name != 'main.main' {
 			c.error('to propagate the optional call, `$c.cur_fn.name` must itself return an optional',
 				or_expr.pos)
 		}
-		return
+		return unwrap_type
 	}
 	stmts_len := or_expr.stmts.len
 	if stmts_len == 0 {
-		if ret_type != table.void_type {
+		if left_type != table.void_type {
 			// x := f() or {}
 			c.error('assignment requires a non empty `or {}` block', or_expr.pos)
-			return
+			return unwrap_type
 		}
 		// allow `f() or {}`
-		return
+		return unwrap_type
 	}
 	mut last_stmt := or_expr.stmts[stmts_len - 1]
 	if ret_type != table.void_type {
@@ -1518,19 +1502,18 @@ pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr, ret_type table.Type
 				type_fits := c.check_types(last_stmt.typ, ret_type)
 				is_panic_or_exit := is_expr_panic_or_exit(last_stmt.expr)
 				if type_fits || is_panic_or_exit {
-					return
+					return unwrap_type
 				}
 				type_name := c.table.type_to_str(last_stmt.typ)
 				expected_type_name := c.table.type_to_str(ret_type.clear_flag(.optional))
 				c.error('wrong return type `$type_name` in the `or {}` block, expected `$expected_type_name`',
 					last_stmt.pos)
-				return
 			}
 			ast.BranchStmt {
 				if last_stmt.tok.kind !in [.key_continue, .key_break] {
 					c.error('only break/continue is allowed as a branch statement in the end of an `or {}` block',
 						last_stmt.tok.position())
-					return
+					return unwrap_type
 				}
 			}
 			ast.Return {}
@@ -1538,10 +1521,10 @@ pub fn (mut c Checker) check_or_expr(mut or_expr ast.OrExpr, ret_type table.Type
 				expected_type_name := c.table.type_to_str(ret_type.clear_flag(.optional))
 				c.error('last statement in the `or {}` block should be an expression of type `$expected_type_name` or exit parent scope',
 					or_expr.pos)
-				return
 			}
 		}
 	}
+	return unwrap_type
 }
 
 fn is_expr_panic_or_exit(expr ast.Expr) bool {
@@ -2630,7 +2613,6 @@ pub fn (mut c Checker) expr(node ast.Expr) table.Type {
 			if node.op == .arrow {
 				right := c.table.get_type_symbol(right_type)
 				if right.kind == .chan {
-					c.stmts(node.or_block.stmts)
 					return right.chan_info().elem_type
 				} else {
 					c.error('<- operator can only be used with `chan` types', node.pos)
