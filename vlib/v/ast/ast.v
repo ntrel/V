@@ -448,7 +448,6 @@ pub:
 	pos        token.Position
 pub mut:
 	right_type table.Type
-	or_block   OrExpr
 }
 
 pub struct IndexExpr {
