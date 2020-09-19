@@ -280,7 +280,6 @@ pub mut:
 	args               []CallArg
 	expected_arg_types []table.Type
 	language           table.Language
-	or_block           OrExpr
 	left_type          table.Type // type of `user`
 	receiver_type      table.Type // User
 	return_type        table.Type

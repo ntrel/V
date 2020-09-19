@@ -20,11 +20,9 @@ pub fn (mut p Parser) call_expr(language table.Language, mod string) ast.CallExp
 	} else {
 		p.check_name()
 	}
-	mut or_kind := ast.OrKind.absent
 	if fn_name == 'json.decode' {
 		p.expecting_type = true // Makes name_expr() parse the type `User` in `json.decode(User, txt)`
 		p.expr_mod = ''
-		or_kind = .block
 	}
 	mut generic_type := table.void_type
 	if p.tok.kind == .lt {
@@ -53,35 +51,6 @@ pub fn (mut p Parser) call_expr(language table.Language, mod string) ast.CallExp
 		pos: first_pos.pos
 		len: last_pos.pos - first_pos.pos + last_pos.len
 	}
-	mut or_stmts := []ast.Stmt{}
-	if p.tok.kind == .key_orelse {
-		// `foo() or {}``
-		was_inside_or_expr := p.inside_or_expr
-		p.inside_or_expr = true
-		p.next()
-		p.open_scope()
-		p.scope.register('err', ast.Var{
-			name: 'err'
-			typ: table.string_type
-			pos: p.tok.position()
-			is_used: true
-		})
-		p.scope.register('errcode', ast.Var{
-			name: 'errcode'
-			typ: table.int_type
-			pos: p.tok.position()
-			is_used: true
-		})
-		or_kind = .block
-		or_stmts = p.parse_block_no_scope(false)
-		p.close_scope()
-		p.inside_or_expr = was_inside_or_expr
-	}
-	if p.tok.kind == .question {
-		// `foo()?`
-		p.next()
-		or_kind = .propagate
-	}
 	mut fn_mod := p.mod
 	if registered := p.table.find_fn(fn_name) {
 		if registered.is_placeholder {
@@ -89,36 +58,12 @@ pub fn (mut p Parser) call_expr(language table.Language, mod string) ast.CallExp
 			fn_name = registered.name
 		}
 	}
-	/*
-	call_expr := ast.CallExpr{
-		name: fn_name
-		args: args
-		mod: fn_mod
-		pos: pos
-		language: language
-		generic_type: generic_type
-	}
-	if or_kind != .absent {
-		return ast.OrExpr2{
-			call_expr: call_expr
-			stmts: or_stmts
-			kind: or_kind
-			pos: pos
-		}
-	}
-	return call_expr
-	*/
 	return ast.CallExpr{
 		name: fn_name
 		args: args
 		mod: fn_mod
 		pos: pos
 		language: language
-		or_block: ast.OrExpr{
-			stmts: or_stmts
-			kind: or_kind
-			pos: pos
-		}
 		generic_type: generic_type
 	}
 }

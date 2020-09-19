@@ -291,6 +291,7 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 			// return node // TODO bring back, only allow ++/-- in exprs in translated code
 		} else if p.tok.kind in [.key_orelse, .question] {
 			// opt or {...}
+			pos := p.tok.position()
 			mut or_stmts := []ast.Stmt{}
 			// default to expression, overridden in assign_stmt
 			mut or_kind := ast.OrKind.expr
