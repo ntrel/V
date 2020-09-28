@@ -16,29 +16,38 @@ pub mut:
 }
 
 // Internal function, used by V (`nums := []int`)
+[inline]
 fn __new_array(mylen int, cap int, elm_size int) array {
 	cap_ := if cap < mylen { mylen } else { cap }
 	arr := array{
 		element_size: elm_size
-		data: vcalloc(cap_ * elm_size)
+		data: malloc(cap_ * elm_size)
 		len: mylen
 		cap: cap_
+	}
+	if mylen != 0 {
+		unsafe {C.memset(arr.data, 0, mylen * elm_size)}
 	}
 	return arr
 }
 
+[unsafe]
 fn __new_array_with_default(mylen int, cap int, elm_size int, val voidptr) array {
 	cap_ := if cap < mylen { mylen } else { cap }
-	mut arr := array{
+	arr := array{
 		element_size: elm_size
-		data: vcalloc(cap_ * elm_size)
+		data: malloc(cap_ * elm_size)
 		len: mylen
 		cap: cap_
 	}
-	if val != 0 {
-		for i in 0..arr.len {
+	if val == 0 {
+		unsafe {C.memset(arr.data, 0, mylen * elm_size)}
+	} else {
+		mut ptr := arr.data
+		for _ in 0..arr.len {
 			unsafe {
-				arr.set_unsafe(i, val)
+				C.memcpy(ptr, val, elm_size)
+				ptr += elm_size
 			}
 		}
 	}
