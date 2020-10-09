@@ -17,8 +17,7 @@ Anything you can do in other languages, you can do in V.
 
 ## Table of Contents
 
-<table>
-    <tr><td width=33% valign=top>
+<div style='column-count:3; column-rule-style: solid'>
 
 * [Hello world](#hello-world)
 * [Comments](#comments)
@@ -45,9 +44,6 @@ Anything you can do in other languages, you can do in V.
     * [Short struct literal syntax](#short-struct-initialization-syntax)
     * [Access modifiers](#access-modifiers)
     * [Methods](#methods)
-
-</td><td width=33% valign=top>
-
 * [println and other builtin functions](#println-and-other-builtin-functions)
 * [Functions 2](#functions-2)
     * [Pure functions by default](#pure-functions-by-default)
@@ -68,9 +64,6 @@ Anything you can do in other languages, you can do in V.
 * [Testing](#testing)
 * [Memory management](#memory-management)
 * [ORM](#orm)
-
-</td><td valign=top>
-
 * [Writing documentation](#writing-documentation)
 * [Tools](#tools)
     * [vfmt](#vfmt)
@@ -93,8 +86,7 @@ Anything you can do in other languages, you can do in V.
     * [Keywords](#appendix-i-keywords)
     * [Operators](#appendix-ii-operators)
 
-</td></tr>
-</table>
+</div>
 
 
 
