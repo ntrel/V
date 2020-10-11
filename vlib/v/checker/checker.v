@@ -1950,7 +1950,7 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 					if is_decl {
 						c.check_valid_snake_case(left.name, 'variable name', left.pos)
 					}
-					mut ident_var_info := left.var_info()
+					mut ident_var_info := left.info as ast.IdentVar
 					if ident_var_info.share == .shared_t {
 						left_type = left_type.set_flag(.shared_f)
 					}
@@ -1995,6 +1995,7 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 		right_sym := c.table.get_type_symbol(right_type_unwrapped)
 		if (left_type.is_ptr() || left_sym.is_pointer()) &&
 			assign_stmt.op !in [.assign, .decl_assign] && !c.inside_unsafe {
+			// ptr op=
 			c.warn('pointer arithmetic is only allowed in `unsafe` blocks', assign_stmt.pos)
 		}
 		if c.pref.translated {
@@ -2056,8 +2057,19 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 		// Dual sides check (compatibility check)
 		if !is_blank_ident && !c.check_types(right_type_unwrapped, left_type_unwrapped) &&
 			right_sym.kind != .placeholder {
-			c.error('cannot assign `$right_sym.source_name` to `$left.str()` of type `$left_sym.source_name`',
+			c.error('cannot assign `$right_sym.source_name` to `$left` of type `$left_sym.source_name`',
 				right.position())
+		}
+		if left_type_unwrapped.idx() == table.byte_type && right_type_unwrapped.idx() == table.rune_type {
+			if right is ast.CharLiteral {
+				mut s := right.val
+				if s[0] == `\\` {s = s[1..]} // skip
+				if s.len == 1 {continue}
+				c.error('rune literal cannot fit in a byte', right.pos)
+			}
+			// TODO
+			// c.warn('cannot assign `$right_sym.source_name` to `$left` of type `$left_sym.source_name`',
+			//	right.position())
 		}
 	}
 }
