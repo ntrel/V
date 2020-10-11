@@ -57,8 +57,12 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 			}
 		}
 		.chartoken {
+			val := p.tok.lit
+			mut width := val.len
+			if val[0] == `\\` {width--} // skip
 			node = ast.CharLiteral{
-				val: p.tok.lit
+				val: val
+				width: width
 				pos: p.tok.position()
 			}
 			p.next()

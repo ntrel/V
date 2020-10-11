@@ -86,9 +86,11 @@ pub mut:
 	need_fmts  []bool // an explicit non-default fmt required, e.g. `x`
 }
 
+// rune
 pub struct CharLiteral {
 pub:
 	val string
+	width int // number of bytes
 	pos token.Position
 }
 

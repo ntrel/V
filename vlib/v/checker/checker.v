@@ -2055,21 +2055,10 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 			else {}
 		}
 		// Dual sides check (compatibility check)
-		if !is_blank_ident && !c.check_types(right_type_unwrapped, left_type_unwrapped) &&
+		if !is_blank_ident && !c.check_expr(right, left_type_unwrapped) &&
 			right_sym.kind != .placeholder {
 			c.error('cannot assign `$right_sym.source_name` to `$left` of type `$left_sym.source_name`',
 				right.position())
-		}
-		if left_type_unwrapped.idx() == table.byte_type && right_type_unwrapped.idx() == table.rune_type {
-			if right is ast.CharLiteral {
-				mut s := right.val
-				if s[0] == `\\` {s = s[1..]} // skip
-				if s.len == 1 {continue}
-				c.error('rune literal cannot fit in a byte', right.pos)
-			}
-			// TODO
-			// c.warn('cannot assign `$right_sym.source_name` to `$left` of type `$left_sym.source_name`',
-			//	right.position())
 		}
 	}
 }

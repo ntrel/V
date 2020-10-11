@@ -278,6 +278,19 @@ pub fn (mut c Checker) check_types(got, expected table.Type) bool {
 	return true
 }
 
+pub fn (mut c Checker) check_expr(expr ast.Expr, expected table.Type) bool {
+	expr_type := c.expr(expr)
+	if expected == table.byte_type {
+		if expr is ast.CharLiteral {
+			if expr.width == 1 {return true}
+			c.error('rune literal cannot fit in a byte', expr.pos)
+		}
+		// TODO
+		// return false
+	}
+	return c.check_types(expr_type, expected)
+}
+
 pub fn (mut c Checker) symmetric_check(left, right table.Type) bool {
 	// allow direct int-literal assignment for pointers for now
 	// maybe in the future optionals should be used for that
