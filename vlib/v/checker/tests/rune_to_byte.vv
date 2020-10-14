@@ -1,0 +1,11 @@
+struct S1 {
+	b byte = `¿`
+}
+
+mut b := byte(0)
+b = `c` // OK
+b = `🌎`
+
+mut c := b
+b, c = `¿`, `1`
+b, c = `1`, `🌎`

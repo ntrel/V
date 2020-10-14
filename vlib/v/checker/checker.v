@@ -372,12 +372,8 @@ pub fn (mut c Checker) struct_decl(decl ast.StructDecl) {
 		}
 		if field.has_default_expr {
 			c.expected_type = field.typ
-			field_expr_type := c.expr(field.default_expr)
-			if !c.check_types(field_expr_type, field.typ) {
-				field_expr_type_sym := c.table.get_type_symbol(field_expr_type)
-				field_type_sym := c.table.get_type_symbol(field.typ)
-				c.error('default expression for field `$field.name` ' +
-					'has type `$field_expr_type_sym.source_name`, but should be `$field_type_sym.source_name`',
+			c.check_type(field.default_expr, field.typ) or {
+				c.error('incompatible initializer for field `$field.name`: $err',
 					field.default_expr.position())
 			}
 			// Check for unnecessary inits like ` = 0` and ` = ''`
@@ -2055,10 +2051,10 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 			else {}
 		}
 		// Dual sides check (compatibility check)
-		if !is_blank_ident && !c.check_expr(right, left_type_unwrapped) &&
-			right_sym.kind != .placeholder {
-			c.error('cannot assign `$right_sym.source_name` to `$left` of type `$left_sym.source_name`',
-				right.position())
+		if !is_blank_ident && right_sym.kind != .placeholder {
+			c.check_type(right, left_type_unwrapped) or {
+				c.error('cannot assign to `$left`: $err', right.position())
+			}
 		}
 	}
 }

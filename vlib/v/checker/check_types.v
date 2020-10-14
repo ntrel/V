@@ -278,17 +278,21 @@ pub fn (mut c Checker) check_types(got, expected table.Type) bool {
 	return true
 }
 
-pub fn (mut c Checker) check_expr(expr ast.Expr, expected table.Type) bool {
+pub fn (mut c Checker) check_type(expr ast.Expr, expected table.Type)? {
+	// always analyse expr, caller might not
 	expr_type := c.expr(expr)
 	if expected == table.byte_type {
 		if expr is ast.CharLiteral {
-			if expr.width == 1 {return true}
-			c.error('rune literal cannot fit in a byte', expr.pos)
+			if expr.width == 1 {return}
+			return error('rune literal ($expr.width bytes) cannot fit in a byte')
 		}
 		// TODO
 		// return false
 	}
-	return c.check_types(expr_type, expected)
+	if c.check_types(expr_type, expected) {return}
+	exp := c.table.type_to_str(expected)
+	got := c.table.type_to_str(expr_type)
+	return error('expected `$exp`, not `$got`')
 }
 
 pub fn (mut c Checker) symmetric_check(left, right table.Type) bool {
