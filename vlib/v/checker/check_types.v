@@ -278,9 +278,7 @@ pub fn (mut c Checker) check_types(got, expected table.Type) bool {
 	return true
 }
 
-pub fn (mut c Checker) check_type(expr ast.Expr, expected table.Type)? {
-	// always analyse expr, caller might not
-	expr_type := c.expr(expr)
+pub fn (mut c Checker) check_type(expr ast.Expr, expr_type, expected table.Type)? {
 	if expected == table.byte_type {
 		if expr is ast.CharLiteral {
 			if expr.width == 1 {return}

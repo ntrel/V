@@ -372,7 +372,8 @@ pub fn (mut c Checker) struct_decl(decl ast.StructDecl) {
 		}
 		if field.has_default_expr {
 			c.expected_type = field.typ
-			c.check_type(field.default_expr, field.typ) or {
+			field_expr_type := c.expr(field.default_expr)
+			c.check_type(field.default_expr, field_expr_type, field.typ) or {
 				c.error('incompatible initializer for field `$field.name`: $err',
 					field.default_expr.position())
 			}
@@ -2052,7 +2053,7 @@ pub fn (mut c Checker) assign_stmt(mut assign_stmt ast.AssignStmt) {
 		}
 		// Dual sides check (compatibility check)
 		if !is_blank_ident && right_sym.kind != .placeholder {
-			c.check_type(right, left_type_unwrapped) or {
+			c.check_type(right, right_type_unwrapped, left_type_unwrapped) or {
 				c.error('cannot assign to `$left`: $err', right.position())
 			}
 		}
