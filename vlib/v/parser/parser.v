@@ -577,6 +577,14 @@ pub fn (mut p Parser) stmt(is_top_level bool) ast.Stmt {
 		.key_for {
 			return p.for_stmt()
 		}
+		.key_fn {
+			if is_top_level {
+				return p.nested_fn_decl()
+				//~ p.error_with_pos('nested fn support not enabled', p.tok.position())
+			} else {
+				return p.fn_decl()
+			}
+		}
 		.name, .key_mut, .key_shared, .key_atomic, .key_static, .mul {
 			if p.tok.kind == .name {
 				if p.tok.lit == 'sql' {

@@ -148,6 +148,12 @@ pub fn (mut p Parser) call_args() []ast.CallArg {
 	return args
 }
 
+fn (mut p Parser) nested_fn_decl() ast.FnDecl {
+	mut decl := p.fn_decl()
+	decl.is_nested = true
+	return decl
+}
+
 fn (mut p Parser) fn_decl() ast.FnDecl {
 	p.top_level_statement_start()
 	start_pos := p.tok.position()

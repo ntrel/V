@@ -262,6 +262,7 @@ pub:
 pub mut:
 	stmts         []Stmt
 	return_type   table.Type
+	is_nested     bool
 }
 
 // break, continue
