@@ -2773,6 +2773,9 @@ fn (mut g Gen) match_expr(node ast.MatchExpr) {
 	}
 	if is_expr {
 		g.decrement_inside_ternary()
+	} else if g.file.mod.name == 'main' {
+	//~ if node.all_return {
+		g.write('v_panic(tos_lit("failed to match invalid value"));')
 	}
 }
 
