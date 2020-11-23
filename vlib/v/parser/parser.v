@@ -546,12 +546,18 @@ pub fn (mut p Parser) comment_stmt() ast.ExprStmt {
 	}
 }
 
+// do not use for vdoc comments
+// Note: the scanner does not create .comment tokens unless needed e.g. for vdoc, vfmt
 pub fn (mut p Parser) eat_comments() []ast.Comment {
-	mut comments := []ast.Comment{}
-	for {
-		if p.tok.kind != .comment {
-			break
+	if !p.pref.is_fmt {
+		// ignore for speed
+		for p.tok.kind == .comment {
+			p.next()
 		}
+		return []
+	}
+	mut comments := []ast.Comment{}
+	for p.tok.kind == .comment {
 		comments << p.comment()
 	}
 	return comments
