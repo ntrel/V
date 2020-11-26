@@ -1,0 +1,17 @@
+vlib/v/checker/tests/init_literal.vv:2:16: error: array `len` needs to be an int
+    1 | i := 3
+    2 | _ = []int{len: 3.3}
+      |                ~~~
+    3 | _ = []int{cap: &i}
+    4 | _ = chan int{cap: [i]}
+vlib/v/checker/tests/init_literal.vv:3:16: error: array `cap` needs to be an int
+    1 | i := 3
+    2 | _ = []int{len: 3.3}
+    3 | _ = []int{cap: &i}
+      |                ^
+    4 | _ = chan int{cap: [i]}
+vlib/v/checker/tests/init_literal.vv:4:19: error: channel `cap` needs to be an int
+    2 | _ = []int{len: 3.3}
+    3 | _ = []int{cap: &i}
+    4 | _ = chan int{cap: [i]}
+      |                   ~~~

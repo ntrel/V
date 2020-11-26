@@ -1,0 +1,4 @@
+i := 3
+_ = []int{len: 3.3}
+_ = []int{cap: &i}
+_ = chan int{cap: [i]}

@@ -2277,10 +2277,11 @@ fn scope_register_ab(mut s ast.Scope, pos token.Position, typ table.Type) {
 	})
 }
 
-fn (mut c Checker) check_array_init_para_type(para string, expr ast.Expr, pos token.Position) {
-	sym := c.table.get_type_symbol(c.expr(expr))
-	if sym.kind !in [.int, .any_int] {
-		c.error('array $para needs to be an int', pos)
+fn (mut c Checker) check_int_type(error_prefix string, expr ast.Expr) {
+	typ := c.expr(expr)
+	kind := c.table.type_kind(typ)
+	if kind !in [.int, .any_int] {
+		c.error('$error_prefix needs to be an int', expr.position())
 	}
 }
 
@@ -2291,10 +2292,10 @@ pub fn (mut c Checker) array_init(mut array_init ast.ArrayInit) table.Type {
 	if array_init.typ != table.void_type {
 		if array_init.exprs.len == 0 {
 			if array_init.has_cap {
-				c.check_array_init_para_type('cap', array_init.cap_expr, array_init.pos)
+				c.check_int_type('array `cap`', array_init.cap_expr)
 			}
 			if array_init.has_len {
-				c.check_array_init_para_type('len', array_init.len_expr, array_init.pos)
+				c.check_int_type('array `len`', array_init.len_expr)
 			}
 		}
 		sym := c.table.get_type_symbol(array_init.elem_type)
@@ -4254,7 +4255,7 @@ pub fn (mut c Checker) chan_init(mut node ast.ChanInit) table.Type {
 		info := c.table.get_type_symbol(node.typ).chan_info()
 		node.elem_type = info.elem_type
 		if node.has_cap {
-			c.check_array_init_para_type('cap', node.cap_expr, node.pos)
+			c.check_int_type('channel `cap`', node.cap_expr)
 		}
 		return node.typ
 	} else {
