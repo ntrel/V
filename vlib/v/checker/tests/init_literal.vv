@@ -1,4 +1,9 @@
 i := 3
+// must be int
 _ = []int{len: 3.3}
 _ = []int{cap: &i}
 _ = chan int{cap: [i]}
+
+// init
+_ = []int{len: 1, init: [i]}
+_ = []int{len: 1, init: 'hi'}

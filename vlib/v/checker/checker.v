@@ -2300,7 +2300,10 @@ pub fn (mut c Checker) array_init(mut array_init ast.ArrayInit) table.Type {
 		}
 		sym := c.table.get_type_symbol(array_init.elem_type)
 		if array_init.has_default {
-			c.expr(array_init.default_expr)
+			typ := c.expr(array_init.default_expr)
+			c.check_expected(typ, array_init.elem_type) or {
+				c.error('invalid array `init`: $err', array_init.default_expr.position())
+			}
 		}
 		if sym.kind == .sum_type {
 			if array_init.has_len && !array_init.has_default {
