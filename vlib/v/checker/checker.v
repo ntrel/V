@@ -3140,17 +3140,17 @@ pub fn (mut c Checker) cast_expr(mut node ast.CastExpr) table.Type {
 		c.error('cannot cast `none` to `$type_name`', node.pos)
 	} else if !c.inside_unsafe && (node.typ.is_ptr() || node.typ.is_pointer()) {
 		// allow &T -> voidptr
-		mut warn := !(node.typ == table.voidptr_type_idx && node.expr_type.is_ptr())
-		// conversion between C pointers is safe unless from voidptr
-		warn = warn && !(node.expr_type != table.voidptr_type_idx && node.expr_type.is_pointer() &&
+		mut bad := !(node.typ == table.voidptr_type_idx && node.expr_type.is_ptr())
+		// conversion from byteptr/charptr -> byteptr/charptr/voidptr is safe
+		bad = bad && !(node.expr_type != table.voidptr_type_idx && node.expr_type.is_pointer() &&
 			node.typ.is_pointer())
 		// allow &byte -> byteptr
-		warn = warn && !(node.typ == table.byteptr_type && node.expr_type.nr_muls() == 1 &&
+		bad = bad && !(node.typ == table.byteptr_type && node.expr_type.nr_muls() == 1 &&
 			from_type_sym.kind == .byte)
 		// allow &char -> charptr
-		warn = warn && !(node.typ == table.charptr_type && node.expr_type.nr_muls() == 1 &&
+		bad = bad && !(node.typ == table.charptr_type && node.expr_type.nr_muls() == 1 &&
 			from_type_sym.kind == .char)
-		if warn {
+		if bad {
 			ft := c.table.type_to_str(node.expr_type)
 			tt := c.table.type_to_str(node.typ)
 			c.warn('casting $ft to $tt is only allowed in `unsafe` code', node.pos)
