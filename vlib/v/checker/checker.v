@@ -3141,6 +3141,8 @@ pub fn (mut c Checker) cast_expr(mut node ast.CastExpr) table.Type {
 	} else if !c.inside_unsafe && (node.typ.is_ptr() || node.typ.is_pointer()) {
 		// allow &T -> voidptr
 		mut bad := !(node.typ == table.voidptr_type_idx && node.expr_type.is_ptr())
+		// allow integer literal -> voidptr
+		bad = bad && !(node.typ == table.voidptr_type && node.expr is ast.IntegerLiteral)
 		// conversion from byteptr/charptr -> byteptr/charptr/voidptr is safe
 		bad = bad && !(node.expr_type != table.voidptr_type_idx && node.expr_type.is_pointer() &&
 			node.typ.is_pointer())
@@ -3153,7 +3155,7 @@ pub fn (mut c Checker) cast_expr(mut node ast.CastExpr) table.Type {
 		if bad {
 			ft := c.table.type_to_str(node.expr_type)
 			tt := c.table.type_to_str(node.typ)
-			c.warn('casting $ft to $tt is only allowed in `unsafe` code', node.pos)
+			c.warn('casting `$ft` to `$tt` is only allowed in `unsafe` code', node.pos)
 		}
 	}
 	if node.has_arg {
