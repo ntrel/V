@@ -94,25 +94,26 @@ fn fast_string_eq(a string, b string) bool {
 
 // Dynamic array with very low growth factor
 struct DenseArray {
+	key_bytes   int
 	value_bytes int
 mut:
 	cap      u32
 	len      u32
 	deletes  u32
-	keys     &string
+	keys     byteptr
 	values   byteptr
 }
 
 [inline]
 [unsafe]
-fn new_dense_array(value_bytes int) DenseArray {
-	s8size := int(8 * sizeof(string))
+fn new_dense_array(key_bytes int, value_bytes int) DenseArray {
 	return DenseArray{
+		key_bytes: key_bytes
 		value_bytes: value_bytes
 		cap: 8
 		len: 0
 		deletes: 0
-		keys: &string(malloc(s8size))
+		keys: malloc(8 * key_bytes)
 		values: malloc(8 * value_bytes)
 	}
 }
@@ -181,9 +182,14 @@ fn (mut d DenseArray) zeros_to_end() {
 	}
 }
 
+pub type HashFn = fn(voidptr)u64
+
 pub struct map {
+	// Number of bytes of a key
+	key_bytes       int
 	// Number of bytes of a value
 	value_bytes     int
+	hash_fn         HashFn
 mut:
 	// Highest even index in the hashtable
 	cap             u32
@@ -205,9 +211,10 @@ pub mut:
 	len            int
 }
 
-fn new_map_1(value_bytes int) map {
+fn new_map_1(key_bytes int, value_bytes int) map {
 	metasize := int(sizeof(u32) * (init_capicity + extra_metas_inc))
 	return map{
+		key_bytes: key_bytes
 		value_bytes: value_bytes
 		cap: init_cap
 		cached_hashbits: max_cached_hashbits
@@ -219,19 +226,19 @@ fn new_map_1(value_bytes int) map {
 	}
 }
 
-fn new_map_init(n int, value_bytes int, keys &string, values voidptr) map {
-	mut out := new_map_1(value_bytes)
+fn new_map_init(n int, key_bytes int, value_bytes int, keys voidptr, values voidptr) map {
+	mut out := new_map_1(key_bytes, value_bytes)
 	for i in 0 .. n {
 		unsafe {
-			out.set(keys[i], byteptr(values) + i * value_bytes)
+			out.set(byteptr(keys) + i * key_bytes, byteptr(values) + i * value_bytes)
 		}
 	}
 	return out
 }
 
 [inline]
-fn (m &map) key_to_index(key string) (u32,u32) {
-	hash := hash.wyhash_c(key.str, u64(key.len), 0)
+fn (m &map) key_to_index(key voidptr) (u32,u32) {
+	hash := m.hash_fn(key)
 	index := hash & m.cap
 	meta := ((hash >> m.shift) & hash_mask) | probe_inc
 	return u32(index),u32(meta)
