@@ -93,6 +93,7 @@ fn fast_string_eq(a string, b string) bool {
 }
 
 struct Slot {
+mut:
 	used     bool
 	data     [0]byte // marker for key bytes then value bytes
 }
@@ -110,14 +111,14 @@ mut:
 }
 
 [inline]
-fn (d &DenseArray) get(i int) &Slot {
+fn (d &DenseArray) slot(i int) &Slot {
 	return unsafe {&Slot(d.slots + i * d.slot_bytes)}
 }
 
 [inline]
 fn (d &DenseArray) key(i int) voidptr {
 	unsafe {
-		slot := d.get(i)
+		slot := d.slot(i)
 		return &slot.data
 	}
 }
@@ -125,7 +126,7 @@ fn (d &DenseArray) key(i int) voidptr {
 [inline]
 fn (d &DenseArray) value(i int) voidptr {
 	unsafe {
-		slot := d.get(i)
+		slot := d.slot(i)
 		return &slot.data + d.key_bytes
 	}
 }
@@ -158,8 +159,11 @@ fn (mut d DenseArray) push(key voidptr, value voidptr) int {
 	}
 	push_index := d.len
 	unsafe {
-		C.memcpy(d.key(push_index), key, d.key_bytes)
-		C.memcpy(d.value(push_index), value, d.value_bytes)
+		mut slot := d.slot(push_index)
+		slot.used = true
+		kptr := &byte(&slot.data)
+		C.memcpy(kptr, key, d.key_bytes)
+		C.memcpy(kptr + d.key_bytes, value, d.value_bytes)
 	}
 	d.len++
 	return push_index
@@ -173,10 +177,10 @@ fn min(a int, b int) int {
 // Move all zeros to the end of the array and resize array
 fn (mut d DenseArray) zeros_to_end() {
 	// TODO alloca?
-	mut tmp_buf := malloc(min(d.value_bytes + d.key_bytes))
+	mut tmp_buf := malloc(min(d.value_bytes, d.key_bytes))
 	mut count := u32(0)
 	for i in 0 .. int(d.len) {
-		if unsafe {d.keys[i]}.str != 0 {
+		if unsafe {d.slot(i)}.used {
 			// TODO: optimize
 			// swap keys
 			unsafe {
