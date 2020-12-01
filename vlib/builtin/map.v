@@ -177,22 +177,16 @@ fn min(a int, b int) int {
 // Move all zeros to the end of the array and resize array
 fn (mut d DenseArray) zeros_to_end() {
 	// TODO alloca?
-	mut tmp_buf := malloc(min(d.value_bytes, d.key_bytes))
-	mut count := u32(0)
-	for i in 0 .. int(d.len) {
+	mut tmp_buf := malloc(d.slot_bytes)
+	mut count := 0
+	for i in 0 .. d.len {
 		if unsafe {d.slot(i)}.used {
 			// TODO: optimize
-			// swap keys
+			// swap
 			unsafe {
-				C.memcpy(tmp_buf, d.key(count), d.key_bytes)
-				C.memcpy(d.key(count), d.keys + i * d.key_bytes, d.key_bytes)
-				C.memcpy(d.keys(i), tmp_buf, d.key_bytes)
-			}
-			// swap values
-			unsafe {
-				C.memcpy(tmp_buf, d.values + count * u32(d.value_bytes), d.value_bytes)
-				C.memcpy(d.values + count * u32(d.value_bytes), d.values + i * d.value_bytes, d.value_bytes)
-				C.memcpy(d.values + i * d.value_bytes, tmp_buf, d.value_bytes)
+				C.memcpy(tmp_buf, d.slot(count), d.slot_bytes)
+				C.memcpy(d.slot(count), d.slot(i), d.slot_bytes)
+				C.memcpy(d.slot(i), tmp_buf, d.slot_bytes)
 			}
 			count++
 		}
@@ -200,10 +194,9 @@ fn (mut d DenseArray) zeros_to_end() {
 	free(tmp_buf)
 	d.deletes = 0
 	d.len = count
-	d.cap = if count < 8 { u32(8) } else { count }
+	d.cap = if count < 8 { 8 } else { count }
 	unsafe {
-		d.keys = v_realloc(byteptr(d.keys), d.key_bytes * d.cap)
-		d.values = v_realloc(byteptr(d.values), u32(d.value_bytes) * d.cap)
+		d.slots = v_realloc(d.slots, d.slot_bytes * d.cap)
 	}
 }
 
