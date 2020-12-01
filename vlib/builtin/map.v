@@ -118,21 +118,25 @@ fn new_dense_array(key_bytes int, value_bytes int) DenseArray {
 	}
 }
 
+[inline]
+fn (d &DenseArray) key(i int) voidptr {
+	return unsafe {d.keys + i * d.key_bytes}
+}
+
 // Push element to array and return index
 // The growth-factor is roughly 1.125 `(x + (x >> 3))`
 [inline]
-fn (mut d DenseArray) push(key string, value voidptr) u32 {
+fn (mut d DenseArray) push(key voidptr, value voidptr) u32 {
 	if d.cap == d.len {
 		d.cap += d.cap >> 3
 		unsafe {
-			x := v_realloc(byteptr(d.keys), sizeof(string) * d.cap)
-			d.keys = &string(x)
+			d.keys := v_realloc(byteptr(d.keys), d.key_bytes * d.cap)
 			d.values = v_realloc(byteptr(d.values), u32(d.value_bytes) * d.cap)
 		}
 	}
 	push_index := d.len
 	unsafe {
-		d.keys[push_index] = key
+		C.memcpy(d.key(push_index), key, d.key_bytes)
 		C.memcpy(d.values + push_index * u32(d.value_bytes), value, d.value_bytes)
 	}
 	d.len++
@@ -146,7 +150,7 @@ fn (d DenseArray) get(i int) voidptr {
 		}
 	}
 	unsafe {
-		return byteptr(d.keys) + i * int(sizeof(string))
+		return d.key(i)
 	}
 }
 
