@@ -130,7 +130,7 @@ fn (mut d DenseArray) push(key voidptr, value voidptr) u32 {
 	if d.cap == d.len {
 		d.cap += d.cap >> 3
 		unsafe {
-			d.keys := v_realloc(byteptr(d.keys), d.key_bytes * d.cap)
+			d.keys = v_realloc(byteptr(d.keys), d.key_bytes * d.cap)
 			d.values = v_realloc(byteptr(d.values), u32(d.value_bytes) * d.cap)
 		}
 	}
@@ -143,6 +143,7 @@ fn (mut d DenseArray) push(key voidptr, value voidptr) u32 {
 	return push_index
 }
 
+[if debug]
 fn (d DenseArray) get(i int) voidptr {
 	$if !no_bounds_checking? {
 		if i < 0 || i >= int(d.len) {
@@ -154,34 +155,40 @@ fn (d DenseArray) get(i int) voidptr {
 	}
 }
 
+[inline]
+fn min(a int, b int) int {
+	return if a < b {a} else {b}
+}
+
 // Move all zeros to the end of the array and resize array
 fn (mut d DenseArray) zeros_to_end() {
-	mut tmp_value := malloc(d.value_bytes)
+	// TODO alloca?
+	mut tmp_buf := malloc(min(d.value_bytes + d.key_bytes))
 	mut count := u32(0)
 	for i in 0 .. int(d.len) {
 		if unsafe {d.keys[i]}.str != 0 {
+			// TODO: optimize
 			// swap keys
 			unsafe {
-				tmp_key := d.keys[count]
-				d.keys[count] = d.keys[i]
-				d.keys[i] = tmp_key
+				C.memcpy(tmp_buf, d.key(count), d.key_bytes)
+				C.memcpy(d.key(count), d.keys + i * d.key_bytes, d.key_bytes)
+				C.memcpy(d.keys(i), tmp_buf, d.key_bytes)
 			}
-			// swap values (TODO: optimize)
+			// swap values
 			unsafe {
-				C.memcpy(tmp_value, d.values + count * u32(d.value_bytes), d.value_bytes)
+				C.memcpy(tmp_buf, d.values + count * u32(d.value_bytes), d.value_bytes)
 				C.memcpy(d.values + count * u32(d.value_bytes), d.values + i * d.value_bytes, d.value_bytes)
-				C.memcpy(d.values + i * d.value_bytes, tmp_value, d.value_bytes)
+				C.memcpy(d.values + i * d.value_bytes, tmp_buf, d.value_bytes)
 			}
 			count++
 		}
 	}
-	free(tmp_value)
+	free(tmp_buf)
 	d.deletes = 0
 	d.len = count
 	d.cap = if count < 8 { u32(8) } else { count }
 	unsafe {
-		x := v_realloc(byteptr(d.keys), sizeof(string) * d.cap)
-		d.keys = &string(x)
+		d.keys = v_realloc(byteptr(d.keys), d.key_bytes * d.cap)
 		d.values = v_realloc(byteptr(d.values), u32(d.value_bytes) * d.cap)
 	}
 }
