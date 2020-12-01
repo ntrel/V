@@ -92,67 +92,77 @@ fn fast_string_eq(a string, b string) bool {
 	}
 }
 
+struct Slot {
+	used     bool
+	data     [0]byte // marker for key bytes then value bytes
+}
+
 // Dynamic array with very low growth factor
 struct DenseArray {
 	key_bytes   int
 	value_bytes int
+	slot_bytes  int
 mut:
-	cap      u32
-	len      u32
-	deletes  u32
-	keys     byteptr
-	values   byteptr
+	cap      int
+	len      int
+	deletes  int
+	slots    byteptr
+}
+
+[inline]
+fn (d &DenseArray) get(i int) &Slot {
+	return unsafe {&Slot(d.slots + i * d.slot_bytes)}
+}
+
+[inline]
+fn (d &DenseArray) key(i int) voidptr {
+	unsafe {
+		slot := d.get(i)
+		return &slot.data
+	}
+}
+
+[inline]
+fn (d &DenseArray) value(i int) voidptr {
+	unsafe {
+		slot := d.get(i)
+		return &slot.data + d.key_bytes
+	}
 }
 
 [inline]
 [unsafe]
 fn new_dense_array(key_bytes int, value_bytes int) DenseArray {
+	slot_bytes := int(sizeof(Slot)) + key_bytes + value_bytes
+	cap := 8
 	return DenseArray{
 		key_bytes: key_bytes
 		value_bytes: value_bytes
-		cap: 8
+		slot_bytes: slot_bytes
+		cap: cap
 		len: 0
 		deletes: 0
-		keys: malloc(8 * key_bytes)
-		values: malloc(8 * value_bytes)
+		slots: malloc(cap * slot_bytes) 
 	}
-}
-
-[inline]
-fn (d &DenseArray) key(i int) voidptr {
-	return unsafe {d.keys + i * d.key_bytes}
 }
 
 // Push element to array and return index
 // The growth-factor is roughly 1.125 `(x + (x >> 3))`
 [inline]
-fn (mut d DenseArray) push(key voidptr, value voidptr) u32 {
+fn (mut d DenseArray) push(key voidptr, value voidptr) int {
 	if d.cap == d.len {
 		d.cap += d.cap >> 3
 		unsafe {
-			d.keys = v_realloc(byteptr(d.keys), d.key_bytes * d.cap)
-			d.values = v_realloc(byteptr(d.values), u32(d.value_bytes) * d.cap)
+			d.slots = v_realloc(d.slots, d.slot_bytes * d.cap)
 		}
 	}
 	push_index := d.len
 	unsafe {
 		C.memcpy(d.key(push_index), key, d.key_bytes)
-		C.memcpy(d.values + push_index * u32(d.value_bytes), value, d.value_bytes)
+		C.memcpy(d.value(push_index), value, d.value_bytes)
 	}
 	d.len++
 	return push_index
-}
-
-[if debug]
-fn (d DenseArray) get(i int) voidptr {
-	$if !no_bounds_checking? {
-		if i < 0 || i >= int(d.len) {
-			panic('DenseArray.get: index out of range (i == $i, d.len == $d.len)')
-		}
-	}
-	unsafe {
-		return d.key(i)
-	}
 }
 
 [inline]
