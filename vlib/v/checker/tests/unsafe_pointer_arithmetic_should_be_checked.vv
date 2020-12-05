@@ -12,14 +12,5 @@ fn test_ptr_infix() {
     q = q + 3
     _ := q
     _ := v
-}
-
-struct S1 {}
-
-[unsafe]
-fn (s S1) f(){}
-
-fn test_funcs() {
-    s := S1{}
-    s.f()
+    _ = 3 + q
 }

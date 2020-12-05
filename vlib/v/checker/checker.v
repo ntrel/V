@@ -627,10 +627,6 @@ pub fn (mut c Checker) infix_expr(mut infix_expr ast.InfixExpr) table.Type {
 	mut left := c.table.get_type_symbol(left_type)
 	left_pos := infix_expr.left.position()
 	right_pos := infix_expr.right.position()
-	if (left_type.is_ptr() || left.is_pointer()) &&
-		infix_expr.op in [.plus, .minus] && !c.inside_unsafe {
-		c.warn('pointer arithmetic is only allowed in `unsafe` blocks', left_pos)
-	}
 	mut return_type := left_type
 	if infix_expr.op != .key_is {
 		match mut infix_expr.left {
@@ -750,6 +746,10 @@ pub fn (mut c Checker) infix_expr(mut infix_expr ast.InfixExpr) table.Type {
 							c.error('$side type of `$infix_expr.op.str()` cannot be non-integer type $name',
 								pos)
 						}
+					}
+				} else if promoted_type.is_ptr() || promoted_type.is_pointer() {
+					if infix_expr.op in [.plus, .minus] && !c.inside_unsafe {
+						c.warn('pointer arithmetic is only allowed in `unsafe` blocks', infix_expr.pos)
 					}
 				}
 				if infix_expr.op in [.div, .mod] {
