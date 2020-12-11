@@ -3374,6 +3374,9 @@ pub fn (mut c Checker) ident(mut ident ast.Ident) table.Type {
 		}
 	}
 	if ident.language == .c {
+		if ident.name == 'NULL' {
+			return table.voidptr_type
+		}
 		return table.int_type
 	}
 	if c.inside_sql {
