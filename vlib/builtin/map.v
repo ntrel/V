@@ -196,6 +196,8 @@ fn (mut d DenseArray) zeros_to_end() {
 pub struct map {
 	// Number of bytes of a key
 	key_bytes       int
+	// true if a key needs cloning and freeing
+	clone_keys      bool
 	// Number of bytes of a value
 	value_bytes     int
 mut:
@@ -224,6 +226,7 @@ fn new_map<T>(value_bytes int) map {
 	key_bytes := int(sizeof(T))
 	return map{
 		key_bytes: key_bytes
+		clone_keys: key_bytes > sizeof(voidptr) // only true for string ATM
 		value_bytes: value_bytes
 		cap: init_cap
 		cached_hashbits: max_cached_hashbits
@@ -247,6 +250,22 @@ fn new_map_init(n int, value_bytes int, keys &string, values voidptr) map {
 		unsafe {out.set(keys[i], byteptr(values) + i * value_bytes)}
 	}
 	return out
+}
+
+// depends on https://github.com/vlang/v/issues/7287
+[future]
+fn keys_eq<T>(a T, b T) bool {
+	return a == b
+}
+
+[inline]
+fn (m &map) keys_eq(a voidptr, b voidptr) bool {
+	if m.clone_keys {
+		// assume string for now
+		return fast_string_eq(*&string(a), *&string(b))
+	}
+	// FIXME only works with integer/pointer types
+	return unsafe {C.memcmp(a, b, m.key_bytes)} == 0
 }
 
 [inline]
@@ -326,10 +345,10 @@ fn (mut m map) set(k string, value voidptr) {
 	// While we might have a match
 	for meta == unsafe {m.metas[index]} {
 		kv_index := int(unsafe {m.metas[index + 1]})
-		pkey := unsafe {&string(m.key_values.key(kv_index))}
-		if fast_string_eq(key, *pkey) {
+		pkey := unsafe {m.key_values.key(kv_index)}
+		if m.keys_eq(&key, pkey) {
 			unsafe {
-				pval := pkey + 1 // skip string
+				pval := byteptr(pkey) + m.key_bytes
 				C.memcpy(pval, value, m.value_bytes)
 			}
 			return
@@ -413,7 +432,7 @@ fn (mut m map) get_and_set(key string, zero voidptr) voidptr {
 			if meta == unsafe {m.metas[index]} {
 				kv_index := int(unsafe {m.metas[index + 1]})
 				pkey := unsafe {&string(m.key_values.key(kv_index))}
-				if fast_string_eq(key, *pkey) {
+				if m.keys_eq(&key, pkey) {
 					return unsafe {byteptr(pkey) + m.key_values.key_bytes}
 				}
 			}
@@ -439,7 +458,7 @@ fn (m map) get(key string, zero voidptr) voidptr {
 		if meta == unsafe {m.metas[index]} {
 			kv_index := int(unsafe {m.metas[index + 1]})
 			pkey := unsafe {&string(m.key_values.key(kv_index))}
-			if fast_string_eq(key, *pkey) {
+			if m.keys_eq(&key, pkey) {
 				return unsafe {byteptr(pkey) + m.key_values.key_bytes}
 			}
 		}
@@ -459,7 +478,7 @@ fn (m map) exists(key string) bool {
 		if meta == unsafe {m.metas[index]} {
 			kv_index := int(unsafe {m.metas[index + 1]})
 			pkey := unsafe {&string(m.key_values.key(kv_index))}
-			if fast_string_eq(key, *pkey) {
+			if m.keys_eq(&key, pkey) {
 				return true
 			}
 		}
@@ -480,7 +499,7 @@ pub fn (mut m map) delete(key string) {
 	for meta == unsafe {m.metas[index]} {
 		kv_index := int(unsafe {m.metas[index + 1]})
 		pkey := unsafe {&string(m.key_values.key(kv_index))}
-		if fast_string_eq(key, *pkey) {
+		if m.keys_eq(&key, pkey) {
 			for (unsafe {m.metas[index + 2]} >> hashbits) > 1 {
 				unsafe {
 					m.metas[index] = m.metas[index + 2] - probe_inc
