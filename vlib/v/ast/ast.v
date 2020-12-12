@@ -470,6 +470,7 @@ pub mut:
 	kind     IdentKind
 	info     IdentInfo
 	is_mut   bool
+	generic_type table.Type
 }
 
 pub fn (i &Ident) var_info() IdentVar {

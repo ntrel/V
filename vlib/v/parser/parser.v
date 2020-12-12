@@ -1006,6 +1006,7 @@ pub fn (mut p Parser) parse_ident(language table.Language) ast.Ident {
 			name = '${p.expr_mod}.$name'
 		}
 		mut generic_type := table.void_type
+		// &func<T>
 		if p.is_amp && p.tok.kind == .lt && p.peek_tok.kind == .name && p.peek_tok2.kind == .gt && 
 			p.peek_tok2.line_nr == p.tok.line_nr && p.peek_tok3.line_nr > p.tok.line_nr {
 			p.next() // `<`
@@ -1029,6 +1030,7 @@ pub fn (mut p Parser) parse_ident(language table.Language) ast.Ident {
 				share: table.sharetype_from_flags(is_shared, is_atomic)
 			}
 			scope: p.scope
+			generic_type: generic_type
 		}
 	}
 	p.error('unexpected token `$p.tok.lit`')

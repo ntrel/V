@@ -3357,8 +3357,12 @@ pub fn (mut c Checker) ident(mut ident ast.Ident) table.Type {
 				else {}
 			}
 		}
-		// Non-anon-function object (not a call), e.g. `onclick(my_click)`
+		// Non-anon-function object (not a call), e.g. fn_name in `pfunc = fn_name`
 		if func := c.table.find_fn(name) {
+			if ident.generic_type != table.void_type {
+				// fn_name<T>
+				c.warn('wip', ident.pos)
+			}
 			fn_type := table.new_type(c.table.find_or_register_fn_type(ident.mod, func,
 				false, true))
 			ident.name = name
