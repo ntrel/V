@@ -1005,6 +1005,15 @@ pub fn (mut p Parser) parse_ident(language table.Language) ast.Ident {
 		if p.expr_mod.len > 0 {
 			name = '${p.expr_mod}.$name'
 		}
+		mut generic_type := table.void_type
+		if p.is_amp && p.tok.kind == .lt && p.peek_tok.kind == .name && p.peek_tok2.kind == .gt && 
+			p.peek_tok2.line_nr == p.tok.line_nr && p.peek_tok3.line_nr > p.tok.line_nr {
+			p.next() // `<`
+			p.expr_mod = ''
+			generic_type = p.parse_type()
+			p.next() // `>`
+			//~ p.warn_with_pos('amp', p.tok.position())
+		}
 		return ast.Ident{
 			tok_kind: p.tok.kind
 			kind: .unresolved
@@ -1212,6 +1221,10 @@ pub fn (mut p Parser) name_expr() ast.Expr {
 			p.expr_mod = ''
 			return node
 		} else {
+			if p.is_amp {
+				//~ p.warn_with_pos('amp', p.tok.position())
+				return p.parse_ident(language)
+			}
 			// fn call
 			// println('calling $p.tok.lit')
 			node = p.call_expr(language, mod)
