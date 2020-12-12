@@ -194,6 +194,8 @@ fn (mut d DenseArray) zeros_to_end() {
 }
 
 pub struct map {
+	// Number of bytes of a key
+	key_bytes       int
 	// Number of bytes of a value
 	value_bytes     int
 mut:
@@ -217,22 +219,30 @@ pub mut:
 	len             int
 }
 
-fn new_map_1(value_bytes int) map {
+fn new_map<T>(value_bytes int) map {
 	metasize := int(sizeof(u32) * (init_capicity + extra_metas_inc))
+	key_bytes := int(sizeof(T))
 	return map{
+		key_bytes: key_bytes
 		value_bytes: value_bytes
 		cap: init_cap
 		cached_hashbits: max_cached_hashbits
 		shift: init_log_capicity
-		key_values: new_dense_array(int(sizeof(string)), value_bytes)
+		key_values: new_dense_array(key_bytes, value_bytes)
 		metas: &u32(vcalloc(metasize))
 		extra_metas: extra_metas_inc
 		len: 0
 	}
 }
 
+// bootstrap
+fn new_map_1(value_bytes int) map {
+	return new_map<string>(value_bytes)
+}
+
 fn new_map_init(n int, value_bytes int, keys &string, values voidptr) map {
 	mut out := new_map_1(value_bytes)
+	// TODO pre-allocate n slots
 	for i in 0 .. n {
 		unsafe {out.set(keys[i], byteptr(values) + i * value_bytes)}
 	}
@@ -554,6 +564,7 @@ pub fn (d DenseArray) clone() DenseArray {
 pub fn (m map) clone() map {
 	metasize := int(sizeof(u32) * (m.cap + 2 + m.extra_metas))
 	res := map{
+		key_bytes: m.key_bytes
 		value_bytes: m.value_bytes
 		cap: m.cap
 		cached_hashbits: m.cached_hashbits
