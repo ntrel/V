@@ -334,9 +334,9 @@ pub fn (mut g Gen) init() {
 	g.definitions.writeln('#define STATIC_ASSERT(COND, UNDERSCORE_MSG) \\')
 	g.definitions.writeln('\ttypedef char static_assertion_##UNDERSCORE_MSG[(COND) ? 1 : -1]')
 	if g.pref.m64 {
-		g.definitions.writeln('STATIC_ASSERT(sizeof(size_t) == 8, size_t_must_be_8);')
+		g.definitions.writeln('STATIC_ASSERT(sizeof(size_t) == 8, cc_must_have_m64);')
 	} else {
-		g.definitions.writeln('STATIC_ASSERT(sizeof(size_t) == 4, size_t_must_be_4);')
+		g.definitions.writeln('STATIC_ASSERT(sizeof(size_t) == 4, cc_must_have_m32);')
 	}
 	g.write_typedef_types()
 	g.write_typeof_functions()
