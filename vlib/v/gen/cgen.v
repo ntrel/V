@@ -333,6 +333,9 @@ pub fn (mut g Gen) init() {
 	g.write_builtin_types()
 	g.definitions.writeln('#define STATIC_ASSERT(COND, UNDERSCORE_MSG) \\')
 	g.definitions.writeln('\ttypedef char static_assertion_##UNDERSCORE_MSG[(COND) ? 1 : -1]')
+	g.definitions.writeln('')
+	mopt := if g.pref.m64 {64} else {32}
+	g.definitions.writeln("// V has -m$mopt - check this is compatible with C compiler's 32/64-bit option")
 	if g.pref.m64 {
 		g.definitions.writeln('STATIC_ASSERT(sizeof(size_t) == 8, cc_must_have_m64);')
 	} else {
