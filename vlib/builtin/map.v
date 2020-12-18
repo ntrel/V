@@ -225,6 +225,7 @@ mut:
 pub mut:
 	// Number of key-values currently in the hashmap
 	len             int
+	has_string_keys bool
 }
 
 fn new_map<T>(value_bytes int) map {
@@ -240,6 +241,7 @@ fn new_map<T>(value_bytes int) map {
 		metas: &u32(vcalloc(metasize))
 		extra_metas: extra_metas_inc
 		len: 0
+		has_string_keys: T.name == 'string'
 	}
 }
 
@@ -259,14 +261,21 @@ fn new_map_init(n int, value_bytes int, keys &string, values voidptr) map {
 
 [inline]
 fn (m &map) keys_eq(a voidptr, b voidptr) bool {
-	// assume string for now
-	return fast_string_eq(*&string(a), *&string(b))
+	if m.has_string_keys {
+		return fast_string_eq(*&string(a), *&string(b))
+	}
+	// FIXME only works with integer/pointer types
+	return unsafe {C.memcmp(a, b, m.key_bytes)} == 0
 }
 
 [inline]
 fn (m &map) key_to_index(pkey voidptr) (u32, u32) {
-	key := *&string(pkey)
-	hash := hash.wyhash_c(key.str, u64(key.len), 0)
+	hash := if m.has_string_keys {
+		key := *&string(pkey)
+		hash.wyhash_c(key.str, u64(key.len), 0)
+	} else {
+		hash.wyhash_c(pkey, u64(m.key_bytes), 0)
+	}
 	index := hash & m.cap
 	meta := ((hash >> m.shift) & hash_mask) | probe_inc
 	return u32(index), u32(meta)
