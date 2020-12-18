@@ -2972,7 +2972,13 @@ pub fn (mut c Checker) expr(node ast.Expr) table.Type {
 			return c.postfix_expr(mut node)
 		}
 		ast.PrefixExpr {
-			right_type := c.expr(node.right)
+			mut right_type := c.expr(node.right)
+			if c.mod == 'main' && right_type.has_flag(.generic) {
+				//~ c.warn(c.table.type_to_str(c.cur_generic_type), node.pos)
+				//~ c.error(c.table.type_to_str(right_type), node.pos)
+				//~ c.error(c.table.type_to_str(right_type), node.pos)
+				right_type = c.cur_generic_type
+			}
 			node.right_type = right_type
 			// TODO: testing ref/deref strategy
 			if node.op == .amp && !right_type.is_ptr() {
