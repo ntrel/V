@@ -139,6 +139,20 @@ fn (d &DenseArray) has_index(i int) bool {
 	return d.deletes == 0 || unsafe {d.all_deleted[i]} == 0
 }
 
+[inline]
+fn (m &map) clone_key(dest voidptr, pkey voidptr) {
+	if !m.has_string_keys {
+		unsafe {
+			C.memcpy(dest, pkey, m.key_bytes)
+		}
+		return
+	}
+	unsafe {
+		s := (*&string(pkey)).clone()
+		C.memcpy(dest, &s, m.key_bytes)
+	}
+}
+
 // Make space to append an element to array and return index
 // The growth-factor is roughly 1.125 `(x + (x >> 3))`
 [inline]
@@ -268,20 +282,6 @@ fn (m &map) key_to_index(pkey voidptr) (u32, u32) {
 	index := hash & m.cap
 	meta := ((hash >> m.shift) & hash_mask) | probe_inc
 	return u32(index), u32(meta)
-}
-
-[inline]
-fn (m &map) clone_key(dest voidptr, pkey voidptr) {
-	if !m.has_string_keys {
-		unsafe {
-			C.memcpy(dest, pkey, m.key_bytes)
-		}
-		return
-	}
-	unsafe {
-		s := (*&string(pkey)).clone()
-		C.memcpy(dest, &s, m.key_bytes)
-	}
 }
 
 fn (m &map) free_key(pkey voidptr) {
