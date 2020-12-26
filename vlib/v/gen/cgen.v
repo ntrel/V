@@ -4639,10 +4639,11 @@ fn (mut g Gen) gen_map_equality_fn(left table.Type) string {
 	fn_builder.writeln('\tif (a.len != b.len) {')
 	fn_builder.writeln('\t\treturn false;')
 	fn_builder.writeln('\t}')
-	fn_builder.writeln('\tarray_string _keys = map_keys(&a);')
 	i := g.new_tmp_var()
-	fn_builder.writeln('\tfor (int $i = 0; $i < _keys.len; ++$i) {')
-	fn_builder.writeln('\t\tstring k = string_clone( ((string*)_keys.data)[$i]);')
+	fn_builder.writeln('\tfor (int $i = 0; $i < a.len; ++$i) {')
+	fn_builder.writeln('\t\tif (!DenseArray_has_index(&a.key_values, $i)) continue;')
+	fn_builder.writeln('\t\tvoidptr k = DenseArray_key(&a.key_values, $i);')
+	fn_builder.writeln('\t\tif (!map_exists_1(&b, k)) return false;')
 	if value_sym.kind == .function {
 		func := value_sym.info as table.FnType
 		ret_styp := g.typ(func.func.return_type)
@@ -4655,14 +4656,14 @@ fn (mut g Gen) gen_map_equality_fn(left table.Type) string {
 				fn_builder.write(', ')
 			}
 		}
-		fn_builder.writeln(') = (*(voidptr*)map_get_1(&a, &k, &(voidptr[]){ 0 }));')
+		fn_builder.writeln(') = (*(voidptr*)map_get_1(&a, k, &(voidptr[]){ 0 }));')
 	} else {
-		fn_builder.writeln('\t\t$value_typ v = (*($value_typ*)map_get_1(&a, &k, &($value_typ[]){ 0 }));')
+		fn_builder.writeln('\t\t$value_typ v = (*($value_typ*)map_get_1(&a, k, &($value_typ[]){ 0 }));')
 	}
 	match value_sym.kind {
-		.string { fn_builder.writeln('\t\tif (!map_exists(b, k) || string_ne((*(string*)map_get_1(&b, &k, &(string[]){_SLIT("")})), v)) {') }
-		.function { fn_builder.writeln('\t\tif (!map_exists(b, k) || (*(voidptr*)map_get_1(&b, &k, &(voidptr[]){ 0 })) != v) {') }
-		else { fn_builder.writeln('\t\tif (!map_exists(b, k) || (*($value_typ*)map_get_1(&b, &k, &($value_typ[]){ 0 })) != v) {') }
+		.string { fn_builder.writeln('\t\tif (!fast_string_eq((*(string*)map_get_1(&b, k, &(string[]){_SLIT("")})), v)) {') }
+		.function { fn_builder.writeln('\t\tif (*(voidptr*)map_get_1(&b, k, &(voidptr[]){ 0 }) != v) {') }
+		else { fn_builder.writeln('\t\tif (*($value_typ*)map_get_1(&b, k, &($value_typ[]){ 0 }) != v) {') }
 	}
 	fn_builder.writeln('\t\t\treturn false;')
 	fn_builder.writeln('\t\t}')
