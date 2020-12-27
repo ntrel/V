@@ -4639,7 +4639,7 @@ fn (mut g Gen) gen_map_equality_fn(left table.Type) string {
 	fn_builder.writeln('\tif (a.len != b.len) {')
 	fn_builder.writeln('\t\treturn false;')
 	fn_builder.writeln('\t}')
-	fn_builder.writeln('\tfor (int i = 0; i < a.len; ++i) {')
+	fn_builder.writeln('\tfor (int i = 0; i < a.key_values.len; ++i) {')
 	fn_builder.writeln('\t\tif (!DenseArray_has_index(&a.key_values, i)) continue;')
 	fn_builder.writeln('\t\tvoidptr k = DenseArray_key(&a.key_values, i);')
 	fn_builder.writeln('\t\tif (!map_exists_1(&b, k)) return false;')
