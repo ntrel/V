@@ -495,6 +495,10 @@ fn test_int_keys() {
 		all << v
 	}
 	assert all == [3, 9, 4, 16, 5, 25]
+	// delete
+	m.delete('jho')
+	m.delete(5)
+	assert m.keys() == [3,4]
 }
 
 fn test_voidptr_keys() {
@@ -505,6 +509,9 @@ fn test_voidptr_keys() {
 	assert m[&v] == 'var'
 	assert m[&m] == 'map'
 	assert m.len == 2
+	m.delete(&m)
+	//~ m.delete(voidptr(&m))
+	assert m.keys() == [voidptr(&v)]
 }
 
 fn test_eq() {

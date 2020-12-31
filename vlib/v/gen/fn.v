@@ -411,6 +411,8 @@ fn (mut g Gen) method_call(node ast.CallExpr) {
 	} else if left_sym.kind == .map {
 		if node.name == 'keys' {
 			name = 'map_keys_1'
+		} else if node.name == 'delete' {
+			name = 'map_delete_1'
 		}
 	}
 	// Check if expression is: arr[a..b].clone(), arr[a..].clone()
