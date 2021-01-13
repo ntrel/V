@@ -137,6 +137,9 @@ pub fn (t &Table) is_same_method(f &Fn, func &Fn) string {
 	if f.params.len != func.params.len {
 		return 'expected $f.params.len parameter(s), not $func.params.len'
 	}
+	if f.params[0].is_mut != func.params[0].is_mut {
+		return 'receiver mutability differs'
+	}
 	for i in 1 .. f.params.len {
 		if f.params[i].typ != func.params[i].typ {
 			exps := t.type_to_str(f.params[i].typ)

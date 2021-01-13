@@ -1,0 +1,24 @@
+interface Register {
+	//mut:
+	register(int)
+}
+
+struct S1 {
+mut:
+	i int
+}
+
+fn (mut f S1) register(i int) {
+	f.i = i
+}
+
+fn do(mut r Register) {
+	r.register(8)
+}
+
+fn test_register() {
+	mut t := S1{}
+	t.register(6)
+	do(mut t)
+	println(t.i)
+}

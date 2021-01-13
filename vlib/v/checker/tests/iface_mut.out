@@ -1,0 +1,7 @@
+vlib/v/checker/tests/iface_mut.vv:22:9: error: `S1` incorrectly implements method `register` of interface `Register`: receiver mutability differs
+   20 |     mut t := S1{}
+   21 |     t.register(6)
+   22 |     do(mut t)
+      |            ^
+   23 |     println(t.i)
+   24 | }
