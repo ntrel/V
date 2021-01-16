@@ -3,15 +3,37 @@
 // that can be found in the LICENSE file.
 module parser
 
+import v.ast
 import v.table
 import v.util
 
 pub fn (mut p Parser) parse_array_type() table.Type {
 	p.check(.lsbr)
 	// fixed array
-	if p.tok.kind == .number {
-		size := p.tok.lit.int()
-		p.next()
+	if p.tok.kind != .rsbr {
+		mut size := 0
+		if p.tok.kind == .number {
+			size = p.tok.lit.int()
+			if p.mod == 'main' {println(size)}
+			p.next()
+		} else if p.tok.kind == .name && p.peek_tok.kind == .rsbr {
+			// [some_const]Type
+			println(p.tok.lit)
+			cfield := p.global_scope.find_const('${p.mod}.$p.tok.lit') or {
+				p.error_with_pos('could not find const named `$p.tok.lit`', p.tok.position())
+				return 0
+			}
+			if cfield.expr is ast.IntegerLiteral {
+				size = cfield.expr.val.int()
+			} else {
+				p.error_with_pos('const `$p.tok.lit` is not an integer literal', p.tok.position())
+				return 0
+			}
+			p.next()
+		} else {
+			p.error_with_pos('unexpected token $p.tok', p.tok.position())
+		}
+if p.mod == 'main' {println(size)}
 		p.check(.rsbr)
 		elem_type := p.parse_type()
 		if elem_type.idx() == 0 {
