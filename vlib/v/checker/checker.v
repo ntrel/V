@@ -2787,7 +2787,7 @@ pub fn (mut c Checker) array_init(mut array_init ast.ArrayInit) table.Type {
 		array_init.elem_type = elem_type
 	} else if array_init.is_fixed && array_init.exprs.len == 1 && array_init.elem_type != table.void_type {
 		// [50]byte
-		mut fixed_size := 1
+		mut fixed_size := -1
 		init_expr := array_init.exprs[0]
 		c.expr(init_expr)
 		match init_expr {
@@ -2795,18 +2795,21 @@ pub fn (mut c Checker) array_init(mut array_init ast.ArrayInit) table.Type {
 				fixed_size = init_expr.val.int()
 			}
 			ast.Ident {
+				// [ident]Type (ident can include mod prefix)
 				if init_expr.obj is ast.ConstField {
-					if cint := const_int_value(init_expr.obj) {
-						fixed_size = cint
+					if init_expr.obj.expr is ast.IntegerLiteral {
+						fixed_size = init_expr.obj.expr.val.int()
+					} else {
+						c.error('invalid array size: const `$init_expr.name` is not an integer literal',
+							array_init.pos)
 					}
-				} else {
-					c.error('non existent integer const $init_expr.name while initializing the size of a static array',
-						array_init.pos)
 				}
 			}
-			else {
-				c.error('expecting `int` for fixed size', array_init.pos)
-			}
+			else {}
+		}
+		if fixed_size == -1 {
+			c.error('invalid array size: expecting `int`', array_init.pos)
+			return 0
 		}
 		idx := c.table.find_or_register_array_fixed(array_init.elem_type, fixed_size)
 		array_type := table.new_type(idx)
@@ -2816,21 +2819,6 @@ pub fn (mut c Checker) array_init(mut array_init ast.ArrayInit) table.Type {
 		}
 	}
 	return array_init.typ
-}
-
-fn const_int_value(cfield ast.ConstField) ?int {
-	if cint := is_const_integer(cfield) {
-		return cint.val.int()
-	}
-	return none
-}
-
-fn is_const_integer(cfield ast.ConstField) ?ast.IntegerLiteral {
-	match cfield.expr {
-		ast.IntegerLiteral { return cfield.expr }
-		else {}
-	}
-	return none
 }
 
 [inline]

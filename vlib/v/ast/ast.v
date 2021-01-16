@@ -512,7 +512,7 @@ pub enum IdentKind {
 	function
 }
 
-// A single identifier
+// A single identifier with module prefix
 pub struct Ident {
 pub:
 	language table.Language
