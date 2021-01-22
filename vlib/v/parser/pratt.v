@@ -442,6 +442,9 @@ fn (mut p Parser) prefix_expr() ast.PrefixExpr {
 	op := p.tok.kind
 	if op == .amp {
 		p.is_amp = true
+		if p.peek_tok.kind == .amp {
+			p.error_with_pos('cannot take address of rvalue', p.peek_tok.position())
+		}
 	}
 	if op == .arrow {
 		p.or_is_handled = true
