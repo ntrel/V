@@ -4767,6 +4767,10 @@ pub fn (mut c Checker) prefix_expr(mut node ast.PrefixExpr) table.Type {
 					node.pos) }
 			ast.FloatLiteral { c.error('cannot take the address of a float literal', node.pos) }
 			ast.CharLiteral { c.error('cannot take the address of a char literal', node.pos) }
+			ast.InfixExpr, ast.PostfixExpr, ast.PrefixExpr {
+				println(typeof(node.right))
+				c.error('cannot take the address of an rvalue', node.pos)
+			}
 			else {}
 		}
 		if mut node.right is ast.IndexExpr {
