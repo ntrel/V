@@ -261,25 +261,35 @@ fn (mut p Parser) comptime_selector(left ast.Expr) ast.Expr {
 		p.check(.lpar)
 		has_parens = true
 	}
+	// `app.$method()`, `method.name` is a string
+	if p.tok.kind == .name && p.peek_tok.kind == .lpar {
+		// TODO deprecate
+		method_name := p.check_name()
+		p.check(.lpar)
+		mut args_var := ''
+		if p.tok.kind == .name {
+			args_var = p.tok.lit
+			p.next()
+		}
+		p.check(.rpar)
+		if p.tok.kind == .key_orelse {
+		}
+		return ast.ComptimeCall{
+			has_parens: has_parens
+			left: left
+			method_name: method_name
+			args_var: args_var
+		}
+	}
+	// left.$(method.name), method.name is a string
 	expr := p.expr(0)
 	if has_parens {
 		p.check(.rpar)
 	}
 	// method call
-	if p.tok.kind == .lpar {
-		mut method_name := ''
-		if has_parens {
-			// left.$(method.name), method.name is a string
-			if expr !is ast.SelectorExpr {
-				p.error_with_pos('expected selector expression', expr.position())
-			}
-		} else {
-			// left.$method
-			if expr is ast.Ident {
-				method_name = expr.name
-			} else {
-				p.error_with_pos('expected identifier', expr.position())
-			}
+	if has_parens && p.tok.kind == .lpar {
+		if expr !is ast.SelectorExpr {
+			p.error_with_pos('expected selector expression', expr.position())
 		}
 		p.check(.lpar)
 		mut args_var := ''
@@ -294,7 +304,6 @@ fn (mut p Parser) comptime_selector(left ast.Expr) ast.Expr {
 			parens_expr: expr
 			has_parens: has_parens
 			left: left
-			method_name: method_name
 			args_var: args_var
 		}
 	}
