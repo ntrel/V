@@ -1122,8 +1122,9 @@ pub mut:
 
 pub struct ComptimeCall {
 pub:
-	has_parens  bool // if $() is used, for vfmt
-	method_name string
+	has_parens  bool // true if $() is used
+	parens_expr Expr // left.$(parens_expr)
+	method_name string // left.$method_name
 	left        Expr
 	is_vweb     bool
 	vweb_tmpl   File

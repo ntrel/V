@@ -261,11 +261,25 @@ fn (mut p Parser) comptime_selector(left ast.Expr) ast.Expr {
 		p.check(.lpar)
 		has_parens = true
 	}
-	if p.peek_tok.kind == .lpar {
-		method_name := p.check_name()
-		// `app.$action()` (`action` is a string)
+	expr := p.expr(0)
+	if has_parens {
+		p.check(.rpar)
+	}
+	// method call
+	if p.tok.kind == .lpar {
+		mut method_name := ''
 		if has_parens {
-			p.check(.rpar)
+			// left.$(method.name), method.name is a string
+			if expr !is ast.SelectorExpr {
+				p.error_with_pos('expected selector expression', expr.position())
+			}
+		} else {
+			// left.$method
+			if expr is ast.Ident {
+				method_name = expr.name
+			} else {
+				p.error_with_pos('expected identifier', expr.position())
+			}
 		}
 		p.check(.lpar)
 		mut args_var := ''
@@ -275,19 +289,14 @@ fn (mut p Parser) comptime_selector(left ast.Expr) ast.Expr {
 		}
 		p.check(.rpar)
 		if p.tok.kind == .key_orelse {
-			p.check(.key_orelse)
-			p.check(.lcbr)
 		}
 		return ast.ComptimeCall{
+			parens_expr: expr
 			has_parens: has_parens
 			left: left
 			method_name: method_name
 			args_var: args_var
 		}
-	}
-	expr := p.expr(0)
-	if has_parens {
-		p.check(.rpar)
 	}
 	return ast.ComptimeSelector{
 		has_parens: has_parens
