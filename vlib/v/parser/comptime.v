@@ -256,12 +256,7 @@ fn (mut p Parser) at() ast.AtExpr {
 
 fn (mut p Parser) comptime_selector(left ast.Expr) ast.Expr {
 	p.check(.dollar)
-	mut has_parens := false
-	if p.tok.kind == .lpar {
-		p.check(.lpar)
-		has_parens = true
-	}
-	// `app.$method()`, `method.name` is a string
+	// `app.$for_var()`, `for_var.name` is a string
 	if p.tok.kind == .name && p.peek_tok.kind == .lpar {
 		// TODO deprecate
 		method_name := p.check_name()
@@ -275,13 +270,17 @@ fn (mut p Parser) comptime_selector(left ast.Expr) ast.Expr {
 		if p.tok.kind == .key_orelse {
 		}
 		return ast.ComptimeCall{
-			has_parens: has_parens
 			left: left
 			method_name: method_name
 			args_var: args_var
 		}
 	}
-	// left.$(method.name), method.name is a string
+	mut has_parens := false
+	if p.tok.kind == .lpar {
+		p.check(.lpar)
+		has_parens = true
+	}
+	// left.$(for_var.name), for_var.name is a string
 	expr := p.expr(0)
 	if has_parens {
 		p.check(.rpar)
