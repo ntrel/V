@@ -11,6 +11,7 @@ fn test<T>() {
 			fv := Foo{}
 			_ = t.$fv.name
 		}
+	_ = t.$f.name
 	}
 	_ = t.$f.name
 }

@@ -72,7 +72,7 @@ mut:
 	prevent_sum_type_unwrapping_once bool   // needed for assign new values to sum type, stopping unwrapping then
 	loop_label                       string // set when inside a labelled for loop
 	timers                           &util.Timers = util.new_timers(false)
-	comptime_fields_type             map[string]table.Type
+	comptime_fields_type             map[string]bool
 	fn_scope                         &ast.Scope = voidptr(0)
 }
 
@@ -2920,7 +2920,9 @@ fn (mut c Checker) stmt(node ast.Stmt) {
 		}
 		ast.CompFor {
 			// node.typ = c.expr(node.expr)
+			c.comptime_fields_type[node.val_var] = true
 			c.stmts(node.stmts)
+			c.comptime_fields_type.delete(node.val_var)
 		}
 		ast.ConstDecl {
 			c.inside_const = true
@@ -3375,7 +3377,20 @@ pub fn (mut c Checker) expr(node ast.Expr) table.Type {
 				}
 				expr_name := node.field_expr.expr.str()
 				if expr_name in c.comptime_fields_type {
-					return c.comptime_fields_type[expr_name]
+					var := ast.Ident{
+						name: expr_name
+					}
+					sel := ast.SelectorExpr{
+						expr: var
+						field_name: node.field_expr.field_name
+					}
+					sel := ast.SelectorExpr{
+						expr: node.left
+						field_name: '${expr_name}.$node.field_expr.field_name'
+						scope: node.field_expr.scope
+						pos: node.field_expr.pos
+					}
+					return c.expr(sel)
 				}
 				c.error('unknown `\$for` variable `$expr_name`', left_pos)
 			} else {
@@ -4455,14 +4470,11 @@ pub fn (mut c Checker) if_expr(mut node ast.IfExpr) table.Type {
 		}
 		if node.is_comptime { // Skip checking if needed
 			// smartcast field type on comptime if
-			mut comptime_field_name := ''
 			if branch.cond is ast.InfixExpr {
 				if branch.cond.op == .key_is {
 					left := branch.cond.left
 					got_type := (branch.cond.right as ast.Type).typ
 					if left is ast.SelectorExpr {
-						comptime_field_name = left.expr.str()
-						c.comptime_fields_type[comptime_field_name] = got_type
 						is_comptime_type_is_expr = true
 					} else if left is ast.Type {
 						is_comptime_type_is_expr = true
@@ -4486,9 +4498,6 @@ pub fn (mut c Checker) if_expr(mut node ast.IfExpr) table.Type {
 				c.stmts(branch.stmts)
 			} else if !is_comptime_type_is_expr {
 				node.branches[i].stmts = []
-			}
-			if comptime_field_name.len > 0 {
-				c.comptime_fields_type.delete(comptime_field_name)
 			}
 			c.skip_flags = cur_skip_flags
 		} else {
