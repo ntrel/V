@@ -249,12 +249,12 @@ pub fn (mut p Parser) expr(precedence int) ast.Expr {
 					node = p.struct_init(true) // short_syntax: true
 				} else if p.tok.kind == .name {
 					p.next()
-					p.error_with_pos('unexpected `$p.tok`, expecting `:` after struct field name',
+					p.error_with_pos('unexpected $p.tok, expecting `:` after struct field name',
 						p.tok.position())
 					return ast.Expr{}
 				} else {
 					println(p.tok.kind)
-					p.error_with_pos('unexpected `$p.tok`, expecting struct field name',
+					p.error_with_pos('unexpected $p.tok, expecting struct field name',
 						p.tok.position())
 					return ast.Expr{}
 				}
