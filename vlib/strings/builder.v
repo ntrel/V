@@ -26,11 +26,17 @@ pub fn new_builder(initial_size int) Builder {
 	}
 }
 
+// write_array appends `bytes` to the accumulated buffer
+pub fn (mut b Builder) write_array(bytes []byte) {
+	howmany := bytes.len
+	b.buf.push_many(bytes.data, howmany)
+	b.len += howmany
+}
+
 // write_bytes appends `bytes` to the accumulated buffer
 [unsafe]
 pub fn (mut b Builder) write_bytes(bytes byteptr, howmany int) {
-	b.buf.push_many(bytes, howmany)
-	b.len += howmany
+	b.write_array(bytes.vbytes(howmany))
 }
 
 // write_b appends a single `data` byte to the accumulated buffer
