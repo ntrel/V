@@ -215,31 +215,29 @@ fn (mut p Parser) fn_decl() ast.FnDecl {
 		language = rec.language
 	}
 	mut name := ''
+	name_pos := p.tok.position()
 	if p.tok.kind == .name {
+		errdecl := ast.FnDecl{
+			scope: 0
+		}
 		pos := p.tok.position()
 		// TODO high order fn
 		name = if language == .js { p.check_js_name() } else { p.check_name() }
 		if language == .v && !p.pref.translated && util.contains_capital(name) && !p.builtin_mod {
 			p.error_with_pos('function names cannot contain uppercase letters, use snake_case instead',
 				pos)
-			return ast.FnDecl{
-				scope: 0
-			}
+			return errdecl
 		}
 		type_sym := p.table.get_type_symbol(rec.typ)
 		// interfaces are handled in the checker, methods can not be defined on them this way
 		if is_method && (type_sym.has_method(name) && type_sym.kind != .interface_) {
 			p.error_with_pos('duplicate method `$name`', pos)
-			return ast.FnDecl{
-				scope: 0
-			}
+			return errdecl
 		}
 		// cannot redefine buildin function
 		if !is_method && !p.builtin_mod && name in builtin_functions {
 			p.error_with_pos('cannot redefine builtin function `$name`', pos)
-			return ast.FnDecl{
-				scope: 0
-			}
+			return errdecl
 		}
 	} else if p.tok.kind in [.plus, .minus, .mul, .div, .mod, .lt, .eq] && p.peek_tok.kind == .lpar {
 		name = p.tok.kind.str() // op_to_fn_name()
@@ -334,6 +332,10 @@ fn (mut p Parser) fn_decl() ast.FnDecl {
 			name = 'JS.$name'
 		} else {
 			name = p.prepend_mod(name)
+		}
+		if !p.pref.translated && language == .v && p.table.fns.exists_1(name) {
+			// TODO show first decl
+			p.error_with_pos('duplicate function `$name`', name_pos)
 		}
 		if _ := p.table.find_fn(name) {
 			p.fn_redefinition_error(name)
