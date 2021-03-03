@@ -1470,7 +1470,8 @@ pub fn (mut c Checker) call_method(mut call_expr ast.CallExpr) table.Type {
 		}
 	}
 	if has_method {
-		if !method.is_pub && !c.pref.is_test && method.mod != c.mod {
+		if !method.is_pub && !c.pref.is_test && !(method.mod.starts_with(c.mod)
+			&& (method.mod.len == c.mod.len || method.mod[c.mod.len] == `.`)) {
 			// If a private method is called outside of the module
 			// its receiver type is defined in, show an error.
 			// println('warn $method_name lef.mod=$left_type_sym.mod c.mod=$c.mod')
